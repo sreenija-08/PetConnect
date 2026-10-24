@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find My Perfect Pet - PetMatch AI - PetConnect</title>
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts (Outfit) -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .choice-card-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+        .choice-card-label {
+            display: block;
+            margin-bottom: 0;
+            cursor: pointer;
+        }
+        .choice-card-input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .choice-card {
+            border: 2px solid #E5E7EB;
+            border-radius: 14px;
+            padding: 16px;
+            background: #FFFFFF;
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            height: 100%;
+        }
+        .choice-card:hover {
+            border-color: #A78BFA;
+            background: #FDFBFF;
+            transform: translateY(-2px);
+        }
+        .choice-card-input:checked + .choice-card {
+            border-color: #5C3BEB;
+            background: #F5F3FF;
+            box-shadow: 0 4px 12px rgba(92, 59, 235, 0.12);
+        }
+        .choice-card-input:focus-visible + .choice-card {
+            outline: 2px solid #5C3BEB;
+            outline-offset: 2px;
+        }
+        .choice-icon {
+            font-size: 1.6rem;
+            flex-shrink: 0;
+        }
+        .choice-text strong {
+            display: block;
+            color: #1F2937;
+            font-size: 0.95rem;
+        }
+        .choice-text small {
+            color: #6B7280;
+            font-size: 0.8rem;
+            line-height: 1.2;
+            display: block;
+        }
+        .section-step-badge {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #5C3BEB;
+            color: #FFFFFF;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar('user', 'petmatch')}"></div>
+
+        <div class="content-wrapper">
+            <!-- Header -->
+            <div th:replace="~{fragments/header :: header(${loggedInUser != null ? loggedInUser.fullName : 'Adopter'}, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200')}"></div>
+
+            <main class="main-content">
+                <div class="container-fluid" style="max-width: 980px;">
+
+                    <!-- Hero Banner -->
+                    <div class="card border-0 shadow-sm rounded-card p-4 p-md-5 mb-4 bg-purple-subtle border-start border-purple border-4">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                            <div>
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="fs-2">✨</span>
+                                    <span class="badge bg-purple text-white px-3 py-1 rounded-pill fw-bold">SMART RECOMMENDATION ENGINE</span>
+                                </div>
+                                <h1 class="fw-bold text-purple mb-2">Find My Perfect Pet</h1>
+                                <p class="text-dark fs-5 mb-0" style="max-width: 650px;">
+                                    Tell us about your lifestyle and we'll recommend pets that may be a good match for you.
+                                </p>
+                            </div>
+                            <div th:if="${hasSavedPreferences}">
+                                <a th:href="@{/user/petmatch/results}" class="btn btn-outline-purple rounded-pill px-4 py-2 fw-semibold">
+                                    View Latest Recommendations &rarr;
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preloaded Preferences Notice -->
+                    <div th:if="${hasSavedPreferences}" class="alert alert-info border-0 rounded-4 p-3 mb-4 shadow-sm d-flex align-items-center gap-2">
+                        <span>ℹ️</span>
+                        <span>We preloaded your previously saved lifestyle preferences. Adjust any answer below or click <strong>Find My Matches</strong>.</span>
+                    </div>
+
+                    <!-- Flash Messages -->
+                    <div th:if="${errorMessage}" class="alert alert-danger border-0 rounded-4 p-3 mb-4 shadow-sm">
+                        <span th:text="${errorMessage}">Error</span>
+                    </div>
+
+                    <!-- Questionnaire Form -->
+                    <form th:action="@{/user/petmatch}" th:object="${preferences}" method="POST" class="mb-5">
+
+                        <!-- Question A: Preferred Pet Type -->
+                        <div class="card border-0 shadow-sm p-4 rounded-card mb-4">
+                            <h5 class="fw-bold text-dark mb-1">
+                                <span class="section-step-badge">A</span> Preferred Pet Type
+                            </h5>
+                            <p class="text-muted small mb-3">Which companion animal are you interested in adopting?</p>
+                            <div class="choice-card-group">
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{preferredPetType}" value="Dog">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">🐶</span>
+                                        <div class="choice-text">
+                                            <strong>Dog</strong>
+                                            <small>Playful & loyal canine</small>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{preferredPetType}" value="Cat">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">🐱</span>
+                                        <div class="choice-text">
+                                            <strong>Cat</strong>
+                                            <small>Independent & cuddly</small>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{preferredPetType}" value="Any">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">🐾</span>
+                                        <div class="choice-text">
+                                            <strong>Any</strong>
+                                            <small>Open to dogs & cats</small>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Question B: Activity Level -->
+                        <div class="card border-0 shadow-sm p-4 rounded-card mb-4">
+                            <h5 class="fw-bold text-dark mb-1">
+                                <span class="section-step-badge">B</span> Activity Level
+                            </h5>
+                            <p class="text-muted small mb-3">What energy level matches your routine?</p>
+                            <div class="choice-card-group">
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{activityLevel}" value="Low">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">🛋️</span>
+                                        <div class="choice-text">
+                                            <strong>Low</strong>
+                                            <small>Calm, gentle, relaxed</small>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{activityLevel}" value="Medium">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">🚶</span>
+                                        <div class="choice-text">
+                                            <strong>Medium</strong>
+                                            <small>Moderate walks & play</small>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{activityLevel}" value="High">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">⚡</span>
+                                        <div class="choice-text">
+                                            <strong>High</strong>
+                                            <small>Energetic & athletic</small>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Question C: Home Type -->
+                        <div class="card border-0 shadow-sm p-4 rounded-card mb-4">
+                            <h5 class="fw-bold text-dark mb-1">
+                                <span class="section-step-badge">C</span> Home Type
+                            </h5>
+                            <p class="text-muted small mb-3">What type of living space will the pet inhabit?</p>
+                            <div class="choice-card-group">
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{homeType}" value="Apartment">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">🏢</span>
+                                        <div class="choice-text">
+                                            <strong>Apartment</strong>
+                                            <small>Cozy flat / studio</small>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{homeType}" value="House">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">🏡</span>
+                                        <div class="choice-text">
+                                            <strong>House</strong>
+                                            <small>Single family with yard</small>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{homeType}" value="Farm / Large Property">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">🌾</span>
+                                        <div class="choice-text">
+                                            <strong>Farm / Property</strong>
+                                            <small>Spacious outdoor area</small>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{homeType}" value="Other">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">🏠</span>
+                                        <div class="choice-text">
+                                            <strong>Other</strong>
+                                            <small>Alternative living space</small>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Question D: Pet Experience -->
+                        <div class="card border-0 shadow-sm p-4 rounded-card mb-4">
+                            <h5 class="fw-bold text-dark mb-1">
+                                <span class="section-step-badge">D</span> Pet Experience
+                            </h5>
+                            <p class="text-muted small mb-3">How familiar are you with caring for pets?</p>
+                            <div class="choice-card-group">
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{experienceLevel}" value="First-time Owner">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">🌱</span>
+                                        <div class="choice-text">
+                                            <strong>First-time Owner</strong>
+                                            <small>Beginner-friendly pet</small>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{experienceLevel}" value="Some Experience">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">🐾</span>
+                                        <div class="choice-text">
+                                            <strong>Some Experience</strong>
+                                            <small>Owned pets in the past</small>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{experienceLevel}" value="Experienced">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">⭐</span>
+                                        <div class="choice-text">
+                                            <strong>Experienced</strong>
+                                            <small>Advanced trainer / owner</small>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Question E: Time Available Per Day -->
+                        <div class="card border-0 shadow-sm p-4 rounded-card mb-4">
+                            <h5 class="fw-bold text-dark mb-1">
+                                <span class="section-step-badge">E</span> Time Available Per Day
+                            </h5>
+                            <p class="text-muted small mb-3">How many hours per day can you dedicate to walking, feeding, and playing?</p>
+                            <div class="choice-card-group">
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{timeAvailable}" value="Less than 1 hour">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">⏱️</span>
+                                        <div class="choice-text">
+                                            <strong>Less than 1 hour</strong>
+                                            <small>Busy schedule</small>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{timeAvailable}" value="1–2 hours">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">⏱️</span>
+                                        <div class="choice-text">
+                                            <strong>1–2 hours</strong>
+                                            <small>Standard daily care</small>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{timeAvailable}" value="2–4 hours">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">⏱️</span>
+                                        <div class="choice-text">
+                                            <strong>2–4 hours</strong>
+                                            <small>Active companionship</small>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{timeAvailable}" value="More than 4 hours">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">⏱️</span>
+                                        <div class="choice-text">
+                                            <strong>More than 4 hours</strong>
+                                            <small>Work-from-home / family</small>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Question F: Children at Home -->
+                        <div class="card border-0 shadow-sm p-4 rounded-card mb-4">
+                            <h5 class="fw-bold text-dark mb-1">
+                                <span class="section-step-badge">F</span> Children at Home
+                            </h5>
+                            <p class="text-muted small mb-3">Do you have young children residing in or frequently visiting your household?</p>
+                            <div class="choice-card-group" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{hasChildren}" value="true">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">👶</span>
+                                        <div class="choice-text">
+                                            <strong>Yes</strong>
+                                            <small>Children present in household</small>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{hasChildren}" value="false">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">🚫</span>
+                                        <div class="choice-text">
+                                            <strong>No</strong>
+                                            <small>Adults-only household</small>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Question G: Preferred Pet Size -->
+                        <div class="card border-0 shadow-sm p-4 rounded-card mb-4">
+                            <h5 class="fw-bold text-dark mb-1">
+                                <span class="section-step-badge">G</span> Preferred Pet Size
+                            </h5>
+                            <p class="text-muted small mb-3">What size pet fits best with your home and handling ability?</p>
+                            <div class="choice-card-group">
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{preferredSize}" value="Small">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">🐾</span>
+                                        <div class="choice-text">
+                                            <strong>Small</strong>
+                                            <small>&lt; 10 kg</small>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{preferredSize}" value="Medium">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">🐕</span>
+                                        <div class="choice-text">
+                                            <strong>Medium</strong>
+                                            <small>10–25 kg</small>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{preferredSize}" value="Large">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">🦮</span>
+                                        <div class="choice-text">
+                                            <strong>Large</strong>
+                                            <small>25+ kg</small>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{preferredSize}" value="Any">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">✨</span>
+                                        <div class="choice-text">
+                                            <strong>Any Size</strong>
+                                            <small>Flexible on size</small>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Question H: Preferred Pet Age -->
+                        <div class="card border-0 shadow-sm p-4 rounded-card mb-4">
+                            <h5 class="fw-bold text-dark mb-1">
+                                <span class="section-step-badge">H</span> Preferred Pet Age
+                            </h5>
+                            <p class="text-muted small mb-3">What age group would you like to welcome?</p>
+                            <div class="choice-card-group">
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{preferredAge}" value="Young">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">🍼</span>
+                                        <div class="choice-text">
+                                            <strong>Young</strong>
+                                            <small>&le; 2 years</small>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{preferredAge}" value="Adult">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">🐕</span>
+                                        <div class="choice-text">
+                                            <strong>Adult</strong>
+                                            <small>3–7 years</small>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{preferredAge}" value="Senior">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">👑</span>
+                                        <div class="choice-text">
+                                            <strong>Senior</strong>
+                                            <small>8+ years</small>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="choice-card-label">
+                                    <input type="radio" class="choice-card-input" th:field="*{preferredAge}" value="Any">
+                                    <div class="choice-card">
+                                        <span class="choice-icon">✨</span>
+                                        <div class="choice-text">
+                                            <strong>Any Age</strong>
+                                            <small>Open to all ages</small>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Question I: Preferred Location -->
+                        <div class="card border-0 shadow-sm p-4 rounded-card mb-4">
+                            <h5 class="fw-bold text-dark mb-1">
+                                <span class="section-step-badge">I</span> Preferred Location
+                            </h5>
+                            <p class="text-muted small mb-3">Enter your preferred city or shelter area (optional):</p>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3">📍</span>
+                                        <input type="text" th:field="*{preferredLocation}" class="form-control rounded-end-pill border-start-0 py-2" placeholder="e.g. Chennai, Tamil Nadu">
+                                    </div>
+                                    <small class="text-muted mt-1 d-block">We prioritize nearby shelter pets for easier visit coordination.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Save Preferences Checkbox & Submit Action -->
+                        <div class="card border-0 shadow-sm p-4 rounded-card mb-4 bg-light">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" th:field="*{savePreferences}" id="savePrefCheck" checked>
+                                    <label class="form-check-label fw-semibold text-dark" for="savePrefCheck">
+                                        Save my preferences for next time
+                                    </label>
+                                    <small class="text-muted d-block">Pre-fills your lifestyle responses whenever you visit PetMatch AI.</small>
+                                </div>
+                                <button type="submit" class="btn btn-purple px-5 py-3 rounded-pill fw-bold fs-5 shadow-sm">
+                                    ✨ Find My Matches &rarr;
+                                </button>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="footer py-4 text-center mt-auto border-top bg-white">
+                <div class="container">
+                    <p class="mb-0 text-muted">&copy; 2026 PetConnect. All rights reserved. Connect. Care. Adopt.</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

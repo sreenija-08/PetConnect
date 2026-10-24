@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Pets - PetConnect</title>
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts (Outfit) -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar(${loggedInUser != null ? (loggedInUser.roles.?[name == 'ROLE_ADMIN'].size() > 0 ? 'admin' : (loggedInUser.roles.?[name == 'ROLE_SHELTER_OWNER'].size() > 0 ? 'owner' : 'user')) : 'public'}, 'browse')}"></div>
+
+        <div class="content-wrapper">
+            <!-- Header -->
+            <div th:replace="~{fragments/header :: header('Guest', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200')}"></div>
+
+            <main class="main-content">
+                <div class="mb-4">
+                    <h1 class="fw-bold mb-1">Browse Pets</h1>
+                    <p class="text-muted">Find your new best friend from our local verified shelters.</p>
+                </div>
+
+                <!-- PetMatch AI Callout Banner for Adopters -->
+                <div th:if="${loggedInUser == null or (loggedInUser.roles.?[name == 'ROLE_SHELTER_OWNER'].size() == 0 and loggedInUser.roles.?[name == 'ROLE_ADMIN'].size() == 0)}" class="card border-0 shadow-sm p-4 mb-4 rounded-card bg-purple-subtle border-start border-purple border-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="fs-1">✨</span>
+                            <div>
+                                <h5 class="fw-bold text-purple mb-1">Looking for a specific match? Try PetMatch AI</h5>
+                                <p class="text-dark small mb-0">Answer a few lifestyle questions and let our recommendation engine find the best matching pets for your home.</p>
+                            </div>
+                        </div>
+                        <a th:href="@{/user/petmatch}" class="btn btn-purple px-4 py-2 rounded-pill fw-bold text-nowrap shadow-sm">
+                            ✨ Find My Perfect Pet &rarr;
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Filters Section -->
+                <div class="card border-0 shadow-sm p-4 mb-5 rounded-card">
+                    <form th:action="@{/browse-pets}" method="GET" class="row g-3 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold text-muted small text-uppercase">Search</label>
+                            <input type="text" name="search" th:value="${search}" class="form-control rounded-pill border-light bg-light py-2 px-3" placeholder="Search pets...">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold text-muted small text-uppercase">Type</label>
+                            <select name="type" id="typeSelect" class="form-select rounded-pill border-light bg-light py-2 px-3">
+                                <option value="all" th:selected="${selectedType == null || selectedType == '' || selectedType == 'all' || #strings.equalsIgnoreCase(selectedType, 'All Types')}">All Types</option>
+                                <option value="Dogs" th:selected="${selectedType != null && (#strings.equalsIgnoreCase(selectedType, 'DOG') || #strings.equalsIgnoreCase(selectedType, 'Dog') || #strings.equalsIgnoreCase(selectedType, 'Dogs'))}">Dogs</option>
+                                <option value="Cats" th:selected="${selectedType != null && (#strings.equalsIgnoreCase(selectedType, 'CAT') || #strings.equalsIgnoreCase(selectedType, 'Cat') || #strings.equalsIgnoreCase(selectedType, 'Cats'))}">Cats</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold text-muted small text-uppercase">Breed</label>
+                            <select name="breed" id="breedSelect" class="form-select rounded-pill border-light bg-light py-2 px-3">
+                                <option value="all" th:selected="${selectedBreed == null || selectedBreed == '' || selectedBreed == 'all' || #strings.equalsIgnoreCase(selectedBreed, 'All Breeds')}">All Breeds</option>
+                                <option th:each="b : ${displayBreeds}" th:value="${b}" th:text="${b}" th:selected="${selectedBreed != null && #strings.equalsIgnoreCase(selectedBreed, b)}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold text-muted small text-uppercase">Gender</label>
+                            <select name="gender" class="form-select rounded-pill border-light bg-light py-2 px-3">
+                                <option value="all" th:selected="${selectedGender == null || selectedGender == '' || selectedGender == 'all' || #strings.equalsIgnoreCase(selectedGender, 'All Genders')}">All Genders</option>
+                                <option value="Male" th:selected="${selectedGender != null && #strings.equalsIgnoreCase(selectedGender, 'Male')}">Male</option>
+                                <option value="Female" th:selected="${selectedGender != null && #strings.equalsIgnoreCase(selectedGender, 'Female')}">Female</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex gap-2">
+                            <button type="submit" class="btn btn-purple py-2 px-3 flex-fill">Search</button>
+                            <a th:href="@{/browse-pets}" class="btn btn-outline-purple py-2 px-3 d-inline-flex align-items-center justify-content-center text-nowrap">Clear Filters</a>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Catalog Grid -->
+                <div class="row g-4">
+                    <!-- No Results -->
+                    <div class="col-12" th:if="${#lists.isEmpty(pets)}">
+                        <div class="card border-0 shadow-sm p-5 text-center rounded-card my-4">
+                            <div class="py-3">
+                                <div style="font-size: 3.5rem; margin-bottom: 1rem;">🐾</div>
+                                <h4 class="fw-bold text-dark mb-2">No pets found</h4>
+                                <p class="text-muted mb-4">Try changing your search or filters.</p>
+                                <a th:href="@{/browse-pets}" class="btn btn-purple px-4 py-2">Clear Filters</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Loop through pets list -->
+                    <div class="col-md-6 col-lg-3" th:each="pet : ${pets}">
+                        <div class="pet-card h-100">
+                            <button type="button" 
+                                    class="favorite-btn" 
+                                    th:classappend="${favoritePetIds != null and favoritePetIds.contains(pet.id) ? 'active' : ''}" 
+                                    th:title="${favoritePetIds != null and favoritePetIds.contains(pet.id) ? 'Remove from Favorites' : 'Add to Favorites'}"
+                                    th:data-pet-id="${pet.id}"
+                                    onclick="toggleFavorite(this, event)">
+                                <span class="heart-icon">❤️</span>
+                            </button>
+                            <img th:src="${pet.displayPhoto}" onerror="this.src='https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=800'" th:alt="${pet.name}">
+                            <div class="pet-card-body d-flex flex-column">
+                                <div class="pet-card-title">
+                                    <h5 th:text="${pet.name}">Bruno</h5>
+                                    <span class="badge-status badge-success" th:text="${pet.adoptionStatus}">Available</span>
+                                </div>
+                                <div class="pet-card-details">
+                                    <span th:text="${pet.type + ' • ' + pet.breed + ' • ' + pet.age + ' Yrs'}">Dog • Labrador • 2 Yrs</span>
+                                </div>
+                                <div class="pet-card-shelter mb-3">
+                                    <span>🏡</span> <span th:text="${pet.shelterName}">Happy Paws Shelter</span>
+                                </div>
+                                <div class="mt-auto">
+                                    <a th:href="@{/pet-details/{id}(id=${pet.id})}" class="btn btn-purple w-100 py-2 fs-6">View Details</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="footer py-4 text-center mt-auto border-top bg-white">
+                <div class="container">
+                    <p class="mb-0 text-muted">&copy; 2026 PetConnect. All rights reserved. Connect. Care. Adopt.</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Dynamic Breed Filtering Script -->
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const breedsData = {
+            all: /*[[${allBreeds}]]*/ [],
+            DOG: /*[[${dogBreeds}]]*/ [],
+            CAT: /*[[${catBreeds}]]*/ []
+        };
+        /*]]>*/
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const typeSelect = document.getElementById('typeSelect');
+            const breedSelect = document.getElementById('breedSelect');
+
+            if (typeSelect && breedSelect) {
+                typeSelect.addEventListener('change', function() {
+                    const selectedVal = (this.value || '').trim();
+                    let targetBreeds = breedsData.all || [];
+                    if (selectedVal.toUpperCase().startsWith('DOG')) {
+                        targetBreeds = breedsData.DOG || [];
+                    } else if (selectedVal.toUpperCase().startsWith('CAT')) {
+                        targetBreeds = breedsData.CAT || [];
+                    }
+
+                    const currentBreed = (breedSelect.value || '').trim().toLowerCase();
+                    let breedStillValid = false;
+
+                    // Rebuild options
+                    breedSelect.innerHTML = '<option value="all">All Breeds</option>';
+                    targetBreeds.forEach(function(b) {
+                        const opt = document.createElement('option');
+                        opt.value = b;
+                        opt.textContent = b;
+                        if (currentBreed && currentBreed !== 'all' && currentBreed === b.toLowerCase()) {
+                            opt.selected = true;
+                            breedStillValid = true;
+                        }
+                        breedSelect.appendChild(opt);
+                    });
+
+                    if (!breedStillValid) {
+                        breedSelect.value = 'all';
+                    }
+                });
+            }
+        });
+
+        function toggleFavorite(btn, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            const petId = btn.getAttribute('data-pet-id');
+            if (!petId) return;
+
+            btn.disabled = true;
+            fetch('/user/favorites/toggle/' + petId, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (response.status === 401 || response.status === 403 || response.redirected) {
+                    window.location.href = '/login';
+                    return null;
+                }
+                return response.json();
+            })
+            .then(data => {
+                btn.disabled = false;
+                if (!data) return;
+                if (data.success) {
+                    if (data.isFavorite) {
+                        btn.classList.add('active');
+                        btn.title = 'Remove from Favorites';
+                    } else {
+                        btn.classList.remove('active');
+                        btn.title = 'Add to Favorites';
+                    }
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                console.error('Error toggling favorite:', err);
+            });
+        }
+    </script>
+</body>
+</html>

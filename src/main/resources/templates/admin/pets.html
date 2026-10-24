@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pets Catalog - Admin - PetConnect</title>
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts (Outfit) -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .layout-wrapper {
+            display: flex;
+            min-height: 100vh;
+            width: 100%;
+            background-color: var(--bg-light);
+            box-sizing: border-box;
+        }
+
+        .sidebar {
+            flex-shrink: 0;
+            min-width: 260px;
+            max-width: 260px;
+            width: 260px;
+            box-sizing: border-box;
+        }
+
+        .content-wrapper {
+            flex: 1 1 0%;
+            min-width: 0;
+            max-width: calc(100% - 260px);
+            width: calc(100% - 260px);
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+
+        .main-content {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow-x: hidden;
+            padding: 32px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 16px;
+            }
+        }
+
+        /* Stat Grid */
+        .pets-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 16px;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 1200px) {
+            .pets-stat-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .pets-stat-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 500px) {
+            .pets-stat-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .pets-stat-grid .stat-widget {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            margin: 0;
+            min-width: 0;
+        }
+
+        .stat-widget-details {
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .stat-widget-details p {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Filters Bar */
+        .search-filter-card {
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 24px;
+            background: #ffffff;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow);
+            padding: 20px;
+        }
+
+        .search-container {
+            display: grid;
+            grid-template-columns: minmax(180px, 1.5fr) minmax(130px, 1fr) minmax(110px, 1fr) minmax(110px, 1fr) minmax(140px, 1fr) auto;
+            gap: 12px;
+            align-items: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 1100px) {
+            .search-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .search-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Table Card */
+        .pets-table-card {
+            width: 100%;
+            background: #ffffff;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            margin-bottom: 32px;
+            box-sizing: border-box;
+        }
+
+        .table-responsive-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .pets-catalog-table {
+            width: 100%;
+            min-width: 1000px;
+            border-collapse: collapse;
+        }
+
+        .pets-catalog-table th {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #6B7280;
+            letter-spacing: 0.05em;
+            padding: 12px 14px;
+            border-bottom: 2px solid #E5E7EB;
+            white-space: nowrap;
+        }
+
+        .pets-catalog-table td {
+            padding: 14px;
+            vertical-align: middle;
+            border-bottom: 1px solid #F3F4F6;
+            font-size: 0.9rem;
+        }
+
+        .pet-avatar-wrapper {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #F3F4F6;
+            flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+
+        .pet-avatar-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .badge-pill-status {
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .badge-pill-approved {
+            background-color: #DEF7EC;
+            color: #03543F;
+            border: 1px solid #BCF0DA;
+        }
+
+        .badge-pill-pending {
+            background-color: #FEF08A;
+            color: #713F12;
+            border: 1px solid #FDE047;
+        }
+
+        .badge-pill-rejected {
+            background-color: #FDE8E8;
+            color: #9B1C1C;
+            border: 1px solid #F8B4B4;
+        }
+
+        .badge-pill-available {
+            background-color: #E1EFFE;
+            color: #1E429F;
+            border: 1px solid #B4C6FC;
+        }
+
+        .badge-pill-adopted {
+            background-color: #EDEBFE;
+            color: #5521B5;
+            border: 1px solid #DCD7FE;
+        }
+
+        .badge-pill-owned {
+            background-color: #F3F4F6;
+            color: #4B5563;
+            border: 1px solid #E5E7EB;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar('admin', 'pets')}"></div>
+
+        <div class="content-wrapper">
+            <!-- Header -->
+            <div th:replace="~{fragments/header :: header('Platform Administrator', 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200')}"></div>
+
+            <main class="main-content">
+                <!-- Flash Messages -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show border-0 rounded-4 p-3 mb-4 shadow-sm" role="alert">
+                    <span class="me-2">✓</span>
+                    <span th:text="${successMessage}">Success!</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show border-0 rounded-4 p-3 mb-4 shadow-sm" role="alert">
+                    <span class="me-2">✕</span>
+                    <span th:text="${errorMessage}">Error!</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <!-- Page Heading -->
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+                    <div>
+                        <h1 class="fw-bold mb-1">Pets Catalog</h1>
+                        <p class="text-muted mb-0">Browse and manage all registered pets, verify listings, and inspect shelter associations.</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="/admin/pet-verification" class="btn btn-outline-purple rounded-pill px-3 py-2 fw-semibold small">
+                            🔎 Pending Audits (<span th:text="${pendingPetsCount}">0</span>)
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Summary Statistics Grid -->
+                <div class="pets-stat-grid">
+                    <div class="stat-widget purple">
+                        <div class="stat-widget-details">
+                            <h3 th:text="${totalPetsCount}">0</h3>
+                            <p>Total Registered Pets</p>
+                        </div>
+                        <div class="stat-widget-icon">🐶</div>
+                    </div>
+                    <div class="stat-widget green">
+                        <div class="stat-widget-details">
+                            <h3 th:text="${availablePetsCount}">0</h3>
+                            <p>Available for Adoption</p>
+                        </div>
+                        <div class="stat-widget-icon">🏠</div>
+                    </div>
+                    <div class="stat-widget orange">
+                        <div class="stat-widget-details">
+                            <h3 th:text="${pendingPetsCount}">0</h3>
+                            <p>Pending Verification</p>
+                        </div>
+                        <div class="stat-widget-icon">⏳</div>
+                    </div>
+                    <div class="stat-widget blue">
+                        <div class="stat-widget-details">
+                            <h3 th:text="${adoptedPetsCount}">0</h3>
+                            <p>Successfully Adopted</p>
+                        </div>
+                        <div class="stat-widget-icon">❤️</div>
+                    </div>
+                    <div class="stat-widget red" style="background: linear-gradient(135deg, #FEF2F2, #FEE2E2); border: 1px solid #FECACA;">
+                        <div class="stat-widget-details">
+                            <h3 style="color: #991B1B;" th:text="${rejectedPetsCount}">0</h3>
+                            <p style="color: #B91C1C;">Rejected / Declined</p>
+                        </div>
+                        <div class="stat-widget-icon">✕</div>
+                    </div>
+                </div>
+
+                <!-- Search and Filter Form Card -->
+                <div class="search-filter-card">
+                    <form th:action="@{/admin/pets}" method="GET" class="search-container">
+                        <!-- Search Box -->
+                        <div>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0 ps-3">🔍</span>
+                                <input type="text" name="search" class="form-control border-0 bg-light py-2" 
+                                       placeholder="Search pet name, breed, shelter, city..." th:value="${searchQuery}">
+                            </div>
+                        </div>
+
+                        <!-- Status Filter -->
+                        <div>
+                            <select name="status" class="form-select border-0 bg-light py-2">
+                                <option value="ALL" th:selected="${selectedStatus == 'ALL'}">All Statuses</option>
+                                <option value="PENDING" th:selected="${selectedStatus == 'PENDING'}">Pending Verification</option>
+                                <option value="APPROVED" th:selected="${selectedStatus == 'APPROVED'}">Approved</option>
+                                <option value="AVAILABLE" th:selected="${selectedStatus == 'AVAILABLE'}">Available for Adoption</option>
+                                <option value="ADOPTED" th:selected="${selectedStatus == 'ADOPTED'}">Adopted</option>
+                                <option value="REJECTED" th:selected="${selectedStatus == 'REJECTED'}">Rejected</option>
+                            </select>
+                        </div>
+
+                        <!-- Pet Type Filter -->
+                        <div>
+                            <select name="type" class="form-select border-0 bg-light py-2">
+                                <option value="ALL" th:selected="${selectedType == 'ALL'}">All Types</option>
+                                <option value="DOG" th:selected="${selectedType == 'DOG'}">Dogs</option>
+                                <option value="CAT" th:selected="${selectedType == 'CAT'}">Cats</option>
+                            </select>
+                        </div>
+
+                        <!-- Gender Filter -->
+                        <div>
+                            <select name="gender" class="form-select border-0 bg-light py-2">
+                                <option value="ALL" th:selected="${selectedGender == 'ALL'}">All Genders</option>
+                                <option value="MALE" th:selected="${selectedGender == 'MALE'}">Male</option>
+                                <option value="FEMALE" th:selected="${selectedGender == 'FEMALE'}">Female</option>
+                            </select>
+                        </div>
+
+                        <!-- Shelter Filter -->
+                        <div>
+                            <select name="shelterId" class="form-select border-0 bg-light py-2">
+                                <option value="" th:selected="${selectedShelterId == null}">All Shelters</option>
+                                <option th:each="s : ${shelters}" th:value="${s.id}" th:text="${s.name}" 
+                                        th:selected="${selectedShelterId != null and selectedShelterId == s.id}">Shelter Name</option>
+                            </select>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-2 justify-content-end">
+                            <button type="submit" class="btn btn-purple rounded-pill px-3 py-2 fw-semibold small">
+                                Filter
+                            </button>
+                            <a th:href="@{/admin/pets}" class="btn btn-light rounded-pill px-3 py-2 fw-semibold small text-muted">
+                                Reset
+                            </a>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Pets Catalog Table Card -->
+                <div class="pets-table-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">Registered Pets (<span th:text="${#lists.size(pets)}">0</span>)</h5>
+                    </div>
+
+                    <div class="table-responsive-container">
+                        <table class="pets-catalog-table">
+                            <thead>
+                                <tr>
+                                    <th>Pet</th>
+                                    <th>Shelter & Location</th>
+                                    <th>Health & Vaccination</th>
+                                    <th>Verification</th>
+                                    <th>Adoption Status</th>
+                                    <th>Registered Date</th>
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Loop Real Pets from MySQL -->
+                                <tr th:each="pet : ${pets}">
+                                    <!-- Pet Info -->
+                                    <td>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="pet-avatar-wrapper">
+                                                <img th:src="${pet.displayPhoto}" 
+                                                     onerror="this.src='https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=400'" 
+                                                     class="pet-avatar-img" alt="Pet Image">
+                                            </div>
+                                            <div>
+                                                <span class="fw-bold text-dark d-block" th:text="${pet.name}">Bruno</span>
+                                                <span class="text-muted small" th:text="${pet.type + ' • ' + (pet.breed != null ? pet.breed : 'Mixed')}">Dog • Labrador</span>
+                                                <div class="text-muted small">
+                                                    <span th:text="${pet.gender != null ? pet.gender : 'Unknown'}">Male</span>
+                                                    <span> • </span>
+                                                    <span th:text="${pet.age != null ? pet.age + ' yrs' : 'N/A'}">2 yrs</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <!-- Shelter & Location -->
+                                    <td>
+                                        <span class="fw-semibold text-dark d-block" th:text="${pet.shelterName}">Happy Paws Shelter</span>
+                                        <small class="text-muted d-block" th:if="${pet.shelter != null}">
+                                            📍 <span th:text="${pet.shelter.city != null and !#strings.isEmpty(pet.shelter.city) ? pet.shelter.city : (pet.shelter.location != null ? pet.shelter.location : 'Telangana')}">Hyderabad</span>
+                                        </small>
+                                        <small class="text-muted" th:if="${pet.shelter != null and pet.shelter.owner != null}">
+                                            👤 <span th:text="${pet.shelter.owner.fullName}">Owner Name</span>
+                                        </small>
+                                        <small class="text-muted" th:if="${pet.shelter == null and pet.ownerName != null}">
+                                            👤 Owner: <span th:text="${pet.ownerName}">Owner</span>
+                                        </small>
+                                    </td>
+
+                                    <!-- Health & Vaccination -->
+                                    <td>
+                                        <div>
+                                            <span class="badge rounded-pill small py-1 px-2"
+                                                  th:classappend="${pet.vaccinated != null and pet.vaccinated ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}"
+                                                  th:text="${pet.vaccinationStatus != null ? pet.vaccinationStatus : 'Not Specified'}">Vaccinated</span>
+                                        </div>
+                                        <small class="text-muted text-truncate d-inline-block mt-1" style="max-width: 180px;" 
+                                               th:text="${pet.healthInfo != null and !#strings.isEmpty(pet.healthInfo) ? pet.healthInfo : 'Good Health'}" 
+                                               th:title="${pet.healthInfo}">Good Health</small>
+                                    </td>
+
+                                    <!-- Verification Status -->
+                                    <td>
+                                        <span th:if="${pet.verificationStatus == 'APPROVED'}" class="badge-pill-status badge-pill-approved">
+                                            ✓ APPROVED
+                                        </span>
+                                        <span th:if="${pet.verificationStatus == 'PENDING'}" class="badge-pill-status badge-pill-pending">
+                                            ⏳ PENDING
+                                        </span>
+                                        <span th:if="${pet.verificationStatus == 'REJECTED'}" class="badge-pill-status badge-pill-rejected">
+                                            ✕ REJECTED
+                                        </span>
+                                        <span th:if="${pet.verificationStatus != 'APPROVED' and pet.verificationStatus != 'PENDING' and pet.verificationStatus != 'REJECTED'}" 
+                                              class="badge-pill-status badge-pill-owned" th:text="${pet.verificationStatus}">
+                                            UNKNOWN
+                                        </span>
+                                    </td>
+
+                                    <!-- Adoption Status -->
+                                    <td>
+                                        <span th:if="${pet.adoptionStatus == 'AVAILABLE'}" class="badge-pill-status badge-pill-available">
+                                            AVAILABLE
+                                        </span>
+                                        <span th:if="${pet.adoptionStatus == 'ADOPTED'}" class="badge-pill-status badge-pill-adopted">
+                                            ❤️ ADOPTED
+                                        </span>
+                                        <span th:if="${pet.adoptionStatus == 'REJECTED'}" class="badge-pill-status badge-pill-rejected">
+                                            REJECTED
+                                        </span>
+                                        <span th:if="${pet.adoptionStatus == 'OWNED'}" class="badge-pill-status badge-pill-owned">
+                                            OWNED
+                                        </span>
+                                        <span th:if="${pet.adoptionStatus != 'AVAILABLE' and pet.adoptionStatus != 'ADOPTED' and pet.adoptionStatus != 'REJECTED' and pet.adoptionStatus != 'OWNED'}" 
+                                              class="badge-pill-status badge-pill-owned" th:text="${pet.adoptionStatus != null ? pet.adoptionStatus : 'PENDING'}">
+                                            PENDING
+                                        </span>
+                                    </td>
+
+                                    <!-- Registered Date -->
+                                    <td>
+                                        <span class="text-muted small" th:if="${pet.createdAt != null}" 
+                                              th:text="${#temporals.format(pet.createdAt, 'dd MMM yyyy')}">01 Jan 2026</span>
+                                        <span class="text-muted small" th:if="${pet.createdAt == null}">Recently</span>
+                                    </td>
+
+                                    <!-- Actions -->
+                                    <td>
+                                        <div class="d-flex align-items-center justify-content-center gap-1">
+                                            <!-- View Details Modal Trigger -->
+                                            <button type="button" class="btn btn-sm btn-outline-purple rounded-pill px-3 py-1 fw-semibold small" 
+                                                    data-bs-toggle="modal" th:data-bs-target="'#viewPetModal-' + ${pet.id}">
+                                                👁️ View
+                                            </button>
+
+                                            <!-- Pending Actions: Approve & Reject -->
+                                            <div class="d-flex gap-1" th:if="${pet.verificationStatus == 'PENDING'}">
+                                                <form th:action="@{/admin/pets/{id}/approve(id=${pet.id})}" method="POST" style="display:inline;">
+                                                    <input type="hidden" name="redirect" value="catalog">
+                                                    <button type="submit" class="btn btn-sm btn-success rounded-pill px-2 py-1 fw-semibold small" title="Approve Pet">
+                                                        ✓
+                                                    </button>
+                                                </form>
+
+                                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1 fw-semibold small" 
+                                                        data-bs-toggle="modal" th:data-bs-target="'#rejectPetModal-' + ${pet.id}" title="Reject Pet">
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- VIEW DETAILS MODAL -->
+                                        <div class="modal fade" th:id="'viewPetModal-' + ${pet.id}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered modal-lg">
+                                                <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                                                    <div class="modal-header border-0 pb-0 bg-light">
+                                                        <div>
+                                                            <h5 class="modal-title fw-bold text-purple" th:text="${pet.name} + ' — Pet Details'">Bruno - Pet Details</h5>
+                                                            <small class="text-muted">Database Record ID #<span th:text="${pet.id}">1</span></small>
+                                                        </div>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+
+                                                    <div class="modal-body p-4 text-start">
+                                                        <!-- Top Row: Photo + Core Info -->
+                                                        <div class="row g-4 mb-4 align-items-center">
+                                                            <div class="col-md-5 text-center">
+                                                                <img th:src="${pet.displayPhoto}" 
+                                                                     onerror="this.src='https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=600'" 
+                                                                     class="img-fluid rounded-4 shadow-sm w-100" 
+                                                                     style="max-height: 240px; object-fit: cover;" alt="Pet photo">
+                                                            </div>
+                                                            <div class="col-md-7">
+                                                                <div class="d-flex flex-wrap gap-2 mb-3">
+                                                                    <!-- Verification Status Badge -->
+                                                                    <span class="badge py-2 px-3 rounded-pill"
+                                                                          th:classappend="${pet.verificationStatus == 'APPROVED' ? 'bg-success text-white' : (pet.verificationStatus == 'REJECTED' ? 'bg-danger text-white' : 'bg-warning text-dark')}">
+                                                                        Verification: <span th:text="${pet.verificationStatus}">PENDING</span>
+                                                                    </span>
+                                                                    <!-- Adoption Status Badge -->
+                                                                    <span class="badge py-2 px-3 rounded-pill"
+                                                                          th:classappend="${pet.adoptionStatus == 'AVAILABLE' ? 'bg-primary text-white' : (pet.adoptionStatus == 'ADOPTED' ? 'bg-info text-white' : (pet.adoptionStatus == 'REJECTED' ? 'bg-danger text-white' : 'bg-secondary text-white'))}">
+                                                                        Status: <span th:text="${pet.adoptionStatus}">AVAILABLE</span>
+                                                                    </span>
+                                                                </div>
+
+                                                                <div class="bg-light p-3 rounded-4">
+                                                                    <div class="row g-2 small">
+                                                                        <div class="col-6"><strong>Species:</strong> <span th:text="${pet.type}">Dog</span></div>
+                                                                        <div class="col-6"><strong>Breed:</strong> <span th:text="${pet.breed}">Labrador</span></div>
+                                                                        <div class="col-6"><strong>Age:</strong> <span th:text="${pet.age != null ? pet.age + ' Years' : 'Unknown'}">2 Years</span></div>
+                                                                        <div class="col-6"><strong>Gender:</strong> <span th:text="${pet.gender}">Male</span></div>
+                                                                        <div class="col-6"><strong>Size:</strong> <span th:text="${pet.size != null ? pet.size : 'Medium'}">Medium</span></div>
+                                                                        <div class="col-6"><strong>Color:</strong> <span th:text="${pet.color != null ? pet.color : 'Standard'}">Golden</span></div>
+                                                                        <div class="col-6"><strong>Vaccination:</strong> <span th:text="${pet.vaccinationStatus != null ? pet.vaccinationStatus : 'Vaccinated'}">Vaccinated</span></div>
+                                                                        <div class="col-6"><strong>Good w/ Children:</strong> <span th:text="${pet.goodWithChildren != null ? (pet.goodWithChildren ? 'Yes' : 'No') : 'Not Specified'}">Yes</span></div>
+                                                                        <div class="col-12" th:if="${pet.healthInfo != null and !#strings.isEmpty(pet.healthInfo)}">
+                                                                            <strong>Health Info:</strong> <span th:text="${pet.healthInfo}">Healthy, dewormed.</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Shelter Details Card -->
+                                                        <div class="card border-0 bg-light p-3 rounded-4 mb-3">
+                                                            <h6 class="fw-bold text-purple mb-2">🏡 Shelter & Ownership Information</h6>
+                                                            <div class="row g-2 small">
+                                                                <div class="col-md-6">
+                                                                    <strong>Shelter:</strong> <span th:text="${pet.shelterName}">Happy Paws Shelter</span>
+                                                                </div>
+                                                                <div class="col-md-6" th:if="${pet.shelter != null and pet.shelter.city != null}">
+                                                                    <strong>Location:</strong> <span th:text="${pet.shelter.city + ', ' + (pet.shelter.state != null ? pet.shelter.state : '')}">Hyderabad, Telangana</span>
+                                                                </div>
+                                                                <div class="col-md-6" th:if="${pet.shelter != null and pet.shelter.owner != null}">
+                                                                    <strong>Shelter Manager:</strong> <span th:text="${pet.shelter.owner.fullName}">Owner Name</span>
+                                                                </div>
+                                                                <div class="col-md-6" th:if="${pet.shelter != null and pet.shelter.email != null}">
+                                                                    <strong>Contact Email:</strong> <span th:text="${pet.shelter.email}">shelter@petconnect.com</span>
+                                                                </div>
+                                                                <div class="col-md-6" th:if="${pet.shelter != null and pet.shelter.phone != null}">
+                                                                    <strong>Contact Phone:</strong> <span th:text="${pet.shelter.phone}">+91 9876543210</span>
+                                                                </div>
+                                                                <div class="col-md-6" th:if="${pet.createdAt != null}">
+                                                                    <strong>Date Added:</strong> <span th:text="${#temporals.format(pet.createdAt, 'dd MMM yyyy, HH:mm')}">01 Jan 2026, 10:00</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Description -->
+                                                        <div class="mb-3" th:if="${pet.description != null and !#strings.isEmpty(pet.description)}">
+                                                            <h6 class="fw-bold small text-muted text-uppercase mb-1">Description</h6>
+                                                            <p class="small text-muted mb-0 bg-white p-3 rounded-3 border" th:text="${pet.description}"></p>
+                                                        </div>
+
+                                                        <!-- Special Care Instructions -->
+                                                        <div class="mb-2" th:if="${pet.specialCareInstructions != null and !#strings.isEmpty(pet.specialCareInstructions)}">
+                                                            <h6 class="fw-bold small text-muted text-uppercase mb-1">Special Care Instructions</h6>
+                                                            <p class="small text-muted mb-0 bg-white p-3 rounded-3 border" th:text="${pet.specialCareInstructions}"></p>
+                                                        </div>
+
+                                                        <!-- Rescue Story -->
+                                                        <div class="mb-2" th:if="${pet.rescueStory != null and !#strings.isEmpty(pet.rescueStory)}">
+                                                            <h6 class="fw-bold small text-muted text-uppercase mb-1">Rescue Story</h6>
+                                                            <p class="small text-muted mb-0 bg-white p-3 rounded-3 border" th:text="${pet.rescueStory}"></p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="modal-footer border-0 pt-0 d-flex justify-content-between bg-light p-3">
+                                                        <button type="button" class="btn btn-secondary rounded-pill px-4 btn-sm" data-bs-dismiss="modal">Close</button>
+                                                        
+                                                        <div class="d-flex gap-2" th:if="${pet.verificationStatus == 'PENDING'}">
+                                                            <form th:action="@{/admin/pets/{id}/approve(id=${pet.id})}" method="POST" style="display:inline;">
+                                                                <input type="hidden" name="redirect" value="catalog">
+                                                                <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 py-2 fw-semibold">
+                                                                    ✓ Approve Pet Listing
+                                                                </button>
+                                                            </form>
+                                                            <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-2 fw-semibold" 
+                                                                    data-bs-toggle="modal" th:data-bs-target="'#rejectPetModal-' + ${pet.id}">
+                                                                ✕ Reject Pet
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- REJECT REASON MODAL -->
+                                        <div class="modal fade" th:id="'rejectPetModal-' + ${pet.id}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered">
+                                                <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                                                    <form th:action="@{/admin/pets/{id}/reject(id=${pet.id})}" method="POST">
+                                                        <input type="hidden" name="redirect" value="catalog">
+                                                        <div class="modal-header border-0 pb-0 bg-danger-subtle">
+                                                            <h5 class="modal-title fw-bold text-danger">Reject Pet Listing</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body p-4 text-start">
+                                                            <p class="mb-3">
+                                                                Are you sure you want to reject the listing for <strong th:text="${pet.name}">Bruno</strong>?
+                                                                This pet will not appear in the public adoption catalog.
+                                                            </p>
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-semibold small">Rejection Reason (Shelter owner will be notified):</label>
+                                                                <textarea name="reason" rows="3" class="form-control rounded-3" 
+                                                                          placeholder="e.g. Incomplete vaccination record, invalid medical info, or duplicate listing."></textarea>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer border-0 pt-0 d-flex justify-content-end gap-2 bg-light p-3">
+                                                            <button type="button" class="btn btn-light rounded-pill px-3 btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                                            <button type="submit" class="btn btn-danger rounded-pill px-4 btn-sm fw-semibold">Confirm Rejection</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </td>
+                                </tr>
+
+                                <!-- Empty State -->
+                                <tr th:if="${#lists.isEmpty(pets)}">
+                                    <td colspan="7" class="text-center py-5">
+                                        <div class="p-4">
+                                            <span class="fs-1">🐕</span>
+                                            <h5 class="fw-bold mt-2 mb-1">No Pets Found</h5>
+                                            <p class="text-muted">No pets match your selected filter criteria. Try adjusting the search or filters.</p>
+                                            <a th:href="@{/admin/pets}" class="btn btn-sm btn-outline-purple rounded-pill px-4 py-2 mt-2">Reset All Filters</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </main>
+
+            <!-- Footer -->
+            <footer class="footer py-4 text-center mt-auto border-top bg-white">
+                <div class="container">
+                    <p class="mb-0 text-muted">&copy; 2026 PetConnect. All rights reserved. Connect. Care. Adopt.</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

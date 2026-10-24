@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pet Details - PetConnect</title>
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts (Outfit) -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar(${loggedInUser != null ? (loggedInUser.roles.?[name == 'ROLE_ADMIN'].size() > 0 ? 'admin' : (loggedInUser.roles.?[name == 'ROLE_SHELTER_OWNER'].size() > 0 ? 'owner' : 'user')) : 'public'}, 'browse')}"></div>
+
+        <div class="content-wrapper">
+            <!-- Header -->
+            <div th:replace="~{fragments/header :: header('Guest', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200')}"></div>
+
+            <main class="main-content">
+                <!-- Back Link -->
+                <div class="mb-4">
+                    <a href="/browse-pets" class="text-decoration-none fw-semibold text-muted">&larr; Back to Pets</a>
+                </div>
+
+                <div class="row g-5">
+                    <!-- Left Column: Pet Profile Info -->
+                    <div class="col-lg-8">
+                        <img th:src="${pet.displayPhoto}" onerror="this.src='https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=800'" th:alt="${pet.name}" class="details-main-img">
+                        <div class="card border-0 shadow-sm p-4 rounded-card mb-4">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <h1 class="fw-bold mb-0" th:text="${pet.name}">Bruno</h1>
+                                    <button type="button" 
+                                            class="detail-favorite-btn" 
+                                            th:classappend="${isFavorite ? 'active' : ''}" 
+                                            th:title="${isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}"
+                                            th:data-pet-id="${pet.id}"
+                                            onclick="toggleFavoriteDetail(this, event)">
+                                        <span class="heart-icon">❤️</span>
+                                    </button>
+                                </div>
+                                <span class="badge-status badge-success" th:text="${pet.adoptionStatus}">Available</span>
+                            </div>
+                            <p class="text-muted fs-5 mb-4" th:text="${pet.type + ' • ' + pet.breed + ' • ' + pet.age + ' Years • ' + pet.gender}">Dog • Labrador • 2 Years • Male</p>
+                            
+                            <h4 class="fw-bold mb-3">About <span th:text="${pet.name}">Bruno</span></h4>
+                            <p class="text-muted mb-4" th:text="${pet.description}">Bruno is a friendly, energetic Labrador who loves playing fetch and getting belly rubs. He gets along well with people and other pets.</p>
+                            
+                            <h4 class="fw-bold mb-3">Details</h4>
+                            <div class="detail-info-grid">
+                                <div class="detail-info-box">
+                                    <span>Age</span>
+                                    <strong th:text="${pet.age + ' Yrs'}">2 Yrs</strong>
+                                </div>
+                                <div class="detail-info-box">
+                                    <span>Gender</span>
+                                    <strong th:text="${pet.gender}">Male</strong>
+                                </div>
+                                <div class="detail-info-box">
+                                    <span>Breed</span>
+                                    <strong th:text="${pet.breed}">Labrador</strong>
+                                </div>
+                                <div class="detail-info-box">
+                                    <span>Vaccinated</span>
+                                    <strong>Yes</strong>
+                                </div>
+                                <div class="detail-info-box">
+                                    <span>Neutered</span>
+                                    <strong>Yes</strong>
+                                </div>
+                            </div>
+
+                            <h4 class="fw-bold mb-3">Health & Basic Information</h4>
+                            <p class="text-muted mb-4" th:text="${pet.healthInfo}">Fully vaccinated, neutered, and dewormed.</p>
+
+                            <div class="mt-4">
+                                <th:block th:if="${pet.adoptionStatus == 'AVAILABLE'}">
+                                    <a th:href="@{/pet/{id}/adopt/readiness(id=${pet.id})}" class="btn btn-purple px-5 py-3 w-100 text-center fs-5 fw-bold shadow-sm">
+                                        🐾 Start Adoption Application
+                                    </a>
+                                    <p class="text-muted small text-center mt-2 mb-0">
+                                        Interested in adopting this pet? Complete a short application so the shelter can understand whether this is a suitable match.
+                                    </p>
+                                </th:block>
+                                <th:block th:if="${pet.adoptionStatus != 'AVAILABLE'}">
+                                    <button class="btn btn-secondary px-5 py-3 w-100 text-center fs-5 fw-bold" disabled>
+                                        Already Adopted
+                                    </button>
+                                    <p class="text-muted small text-center mt-2 mb-0">
+                                        This pet has found their forever home!
+                                    </p>
+                                </th:block>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Shelter Info & Social Share -->
+                    <div class="col-lg-4">
+                        <!-- About the Shelter Card (if shelter pet) -->
+                        <div class="card border-0 shadow-sm p-4 rounded-card mb-4" th:if="${shelter != null}">
+                            <h4 class="fw-bold mb-3">About the Shelter</h4>
+                            <div class="mb-3" th:if="${shelter.firstImage != null}">
+                                <img th:src="${shelter.displayImage}" 
+                                     onerror="this.src='https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&q=80&w=400'"
+                                     class="img-fluid rounded-4 shadow-sm w-100 object-fit-cover" style="max-height: 150px;" alt="Shelter Photo">
+                            </div>
+                            <div class="d-flex align-items-center gap-2 mb-3">
+                                <h5 class="fw-bold mb-0 text-purple" th:text="${shelter.name}">Happy Paws Shelter</h5>
+                                <span class="badge-status badge-success py-1 px-2 small">Verified</span>
+                            </div>
+                            <p class="text-muted small mb-3">🏡 <span th:text="${shelter.location}">Chennai, Tamil Nadu</span></p>
+                            <p class="text-muted mb-4" th:text="${shelter.description}">We rescue and care for abandoned and rescued animals, helping them find loving forever homes.</p>
+                            
+                            <div class="row text-center mb-4">
+                                <div class="col-6">
+                                    <div class="bg-light p-3 rounded-4">
+                                        <h4 class="fw-bold mb-1 text-purple" th:text="${shelter.capacity}">20</h4>
+                                        <span class="text-muted small">Capacity</span>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="bg-light p-3 rounded-4">
+                                        <h4 class="fw-bold mb-1 text-purple" th:text="${shelter.availableCapacity}">5</h4>
+                                        <span class="text-muted small">Available</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <a th:href="${loggedInUser != null ? '/user/find-pet-care' : '/login'}" class="btn btn-outline-purple w-100 py-3">View Shelter Profile</a>
+                        </div>
+
+                        <!-- Family Pet Info Card (if user-owned pet) -->
+                        <div class="card border-0 shadow-sm p-4 rounded-card mb-4" th:if="${shelter == null}">
+                            <h4 class="fw-bold mb-3">Family Pet</h4>
+                            <div class="d-flex align-items-center gap-2 mb-3">
+                                <span class="badge bg-light text-purple py-2 px-3 rounded-pill fw-semibold">Registered Family Pet</span>
+                            </div>
+                            <p class="text-muted small mb-2">Registered Owner: <strong class="text-dark" th:text="${pet.ownerName != null ? pet.ownerName : 'Private Owner'}">Owner</strong></p>
+                            <p class="text-muted small mb-3" th:if="${pet.specialCareInstructions != null and !#strings.isEmpty(pet.specialCareInstructions)}">
+                                <strong>Special Care:</strong> <span th:text="${pet.specialCareInstructions}"></span>
+                            </p>
+                            <a th:href="${loggedInUser != null ? '/user/my-pets' : '/login'}" class="btn btn-outline-purple w-100 py-3">View in My Pets</a>
+                        </div>
+
+                        <!-- Share Card -->
+                        <div class="card border-0 shadow-sm p-4 rounded-card text-center">
+                            <h5 class="fw-bold mb-3">Share this pet</h5>
+                            <div class="d-flex justify-content-center gap-3">
+                                <a href="#" class="btn btn-light rounded-circle shadow-sm" style="width: 44px; height: 44px; line-height: 28px;">📘</a>
+                                <a href="#" class="btn btn-light rounded-circle shadow-sm" style="width: 44px; height: 44px; line-height: 28px;">🐦</a>
+                                <a href="#" class="btn btn-light rounded-circle shadow-sm" style="width: 44px; height: 44px; line-height: 28px;">🟢</a>
+                                <a href="#" class="btn btn-light rounded-circle shadow-sm" style="width: 44px; height: 44px; line-height: 28px;">🔗</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="footer py-4 text-center mt-auto border-top bg-white">
+                <div class="container">
+                    <p class="mb-0 text-muted">&copy; 2026 PetConnect. All rights reserved. Connect. Care. Adopt.</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        function toggleFavoriteDetail(btn, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            const petId = btn.getAttribute('data-pet-id');
+            if (!petId) return;
+
+            btn.disabled = true;
+            fetch('/user/favorites/toggle/' + petId, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (response.status === 401 || response.status === 403 || response.redirected) {
+                    window.location.href = '/login';
+                    return null;
+                }
+                return response.json();
+            })
+            .then(data => {
+                btn.disabled = false;
+                if (!data) return;
+                if (data.success) {
+                    if (data.isFavorite) {
+                        btn.classList.add('active');
+                        btn.title = 'Remove from Favorites';
+                    } else {
+                        btn.classList.remove('active');
+                        btn.title = 'Add to Favorites';
+                    }
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                console.error('Error toggling favorite:', err);
+            });
+        }
+    </script>
+</body>
+</html>

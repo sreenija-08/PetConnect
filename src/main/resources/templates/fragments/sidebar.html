@@ -1,0 +1,246 @@
+<div th:fragment="sidebar(module, activePage)" class="sidebar">
+    <a href="/" class="brand">
+        <span>🐾</span> PetConnect
+    </a>
+
+    <!-- PUBLIC NAVIGATION -->
+    <th:block th:if="${module == 'public'}">
+        <div class="sidebar-heading">Public</div>
+        <ul class="sidebar-nav">
+            <li>
+                <a href="/" class="sidebar-nav-link" th:classappend="${activePage == 'home' ? 'active' : ''}">
+                    <span class="icon">🏠</span> Home
+                </a>
+            </li>
+            <li>
+                <a href="/browse-pets" class="sidebar-nav-link" th:classappend="${activePage == 'browse' ? 'active' : ''}">
+                    <span class="icon">🔍</span> Browse Pets
+                </a>
+            </li>
+            <li>
+                <a href="/user/find-pet-care" class="sidebar-nav-link" th:classappend="${activePage == 'care' ? 'active' : ''}">
+                    <span class="icon">🏡</span> Shelters
+                </a>
+            </li>
+            <li>
+                <a href="/how-it-works" class="sidebar-nav-link" th:classappend="${activePage == 'how-it-works' ? 'active' : ''}">
+                    <span class="icon">❓</span> How It Works
+                </a>
+            </li>
+            <li>
+                <a href="/contact" class="sidebar-nav-link" th:classappend="${activePage == 'contact' ? 'active' : ''}">
+                    <span class="icon">📞</span> Contact Us
+                </a>
+            </li>
+        </ul>
+    </th:block>
+
+    <!-- USER MODULE -->
+    <th:block th:if="${module == 'user'}">
+        <div class="sidebar-heading">User Panel</div>
+        <ul class="sidebar-nav">
+            <li>
+                <a href="/user/dashboard" class="sidebar-nav-link" th:classappend="${activePage == 'dashboard' ? 'active' : ''}">
+                    <span class="icon">📊</span> Dashboard
+                </a>
+            </li>
+            <li>
+                <a href="/browse-pets" class="sidebar-nav-link" th:classappend="${activePage == 'browse' ? 'active' : ''}">
+                    <span class="icon">🐶</span> Browse Pets
+                </a>
+            </li>
+            <li>
+                <a href="/user/petmatch" class="sidebar-nav-link" th:classappend="${activePage == 'petmatch' ? 'active' : ''}">
+                    <span class="icon">✨</span> Find My Perfect Pet
+                </a>
+            </li>
+            <li>
+                <a href="/user/find-pet-care" class="sidebar-nav-link" th:classappend="${activePage == 'care' ? 'active' : ''}">
+                    <span class="icon">🏡</span> Find Pet Care
+                </a>
+            </li>
+            <li>
+                <a href="/user/my-pets" class="sidebar-nav-link" th:classappend="${activePage == 'mypets' ? 'active' : ''}">
+                    <span class="icon">🐈</span> My Pets
+                </a>
+            </li>
+            <li>
+                <a href="/user/adoption-requests" class="sidebar-nav-link" th:classappend="${activePage == 'adoptions' ? 'active' : ''}">
+                    <span class="icon">📄</span> My Adoption Requests
+                </a>
+            </li>
+            <li>
+                <a href="/user/reviews" class="sidebar-nav-link" th:classappend="${activePage == 'reviews' ? 'active' : ''}">
+                    <span class="icon">⭐</span> My Reviews
+                </a>
+            </li>
+            <li>
+                <a href="/user/care-bookings" class="sidebar-nav-link" th:classappend="${activePage == 'bookings' ? 'active' : ''}">
+                    <span class="icon">📅</span> My Care Bookings
+                </a>
+            </li>
+            <li>
+                <a href="/user/favorites" class="sidebar-nav-link" th:classappend="${activePage == 'favorites' ? 'active' : ''}">
+                    <span class="icon">❤️</span> Favorites
+                </a>
+            </li>
+            <li>
+                <a href="/user/notifications" class="sidebar-nav-link" th:classappend="${activePage == 'notifications' ? 'active' : ''}">
+                    <span class="icon">🔔</span> Notifications
+                    <span class="badge bg-danger rounded-pill ms-auto" th:if="${unreadNotificationsCount != null && unreadNotificationsCount > 0}" th:text="${unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}">1</span>
+                </a>
+            </li>
+            <li>
+                <a href="/user/profile" class="sidebar-nav-link" th:classappend="${activePage == 'profile' ? 'active' : ''}">
+                    <span class="icon">👤</span> Profile
+                </a>
+            </li>
+            <li>
+                <a href="/user/settings" class="sidebar-nav-link" th:classappend="${activePage == 'settings' ? 'active' : ''}">
+                    <span class="icon">⚙️</span> Settings
+                </a>
+            </li>
+            <li>
+                <a href="/logout" class="sidebar-nav-link">
+                    <span class="icon">🚪</span> Logout
+                </a>
+            </li>
+        </ul>
+    </th:block>
+
+    <!-- SHELTER OWNER MODULE -->
+    <th:block th:if="${module == 'owner'}">
+        <div class="sidebar-heading">Shelter Panel</div>
+        <ul class="sidebar-nav">
+            <li>
+                <a href="/owner/dashboard" class="sidebar-nav-link" th:classappend="${activePage == 'dashboard' ? 'active' : ''}">
+                    <span class="icon">📊</span> Dashboard
+                </a>
+            </li>
+            <li>
+                <a href="/owner/my-shelter" class="sidebar-nav-link" th:classappend="${activePage == 'shelter' ? 'active' : ''}">
+                    <span class="icon">🏡</span> My Shelter
+                </a>
+            </li>
+            <li>
+                <a href="/owner/my-pets" class="sidebar-nav-link" th:classappend="${activePage == 'pets' ? 'active' : ''}">
+                    <span class="icon">🐶</span> My Pets
+                </a>
+            </li>
+            <li>
+                <a href="/owner/add-pet" class="sidebar-nav-link" th:classappend="${activePage == 'addpet' ? 'active' : ''}">
+                    <span class="icon">➕</span> Add Pet
+                </a>
+            </li>
+            <li>
+                <a href="/owner/adoption-requests" class="sidebar-nav-link" th:classappend="${activePage == 'adoptions' ? 'active' : ''}">
+                    <span class="icon">📄</span> Adoption Requests
+                </a>
+            </li>
+            <li>
+                <a href="/owner/care-requests" class="sidebar-nav-link" th:classappend="${activePage == 'carerequests' ? 'active' : ''}">
+                    <span class="icon">📅</span> Pet Care Requests
+                </a>
+            </li>
+            <li>
+                <a href="/owner/current-stays" class="sidebar-nav-link" th:classappend="${activePage == 'stays' ? 'active' : ''}">
+                    <span class="icon">🐕</span> Current Stays
+                </a>
+            </li>
+            <li>
+                <a href="/owner/my-shelter" class="sidebar-nav-link">
+                    <span class="icon">📈</span> Capacity Management
+                </a>
+            </li>
+            <li>
+                <a href="/shelter/settings" class="sidebar-nav-link" th:classappend="${activePage == 'settings' ? 'active' : ''}">
+                    <span class="icon">⚙️</span> Settings
+                </a>
+            </li>
+            <li>
+                <a href="/owner/notifications" class="sidebar-nav-link" th:classappend="${activePage == 'notifications' ? 'active' : ''}">
+                    <span class="icon">🔔</span> Notifications
+                    <span class="badge bg-danger rounded-pill ms-auto" th:if="${unreadNotificationsCount != null && unreadNotificationsCount > 0}" th:text="${unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}">1</span>
+                </a>
+            </li>
+            <li>
+                <a href="/logout" class="sidebar-nav-link">
+                    <span class="icon">🚪</span> Logout
+                </a>
+            </li>
+        </ul>
+    </th:block>
+
+    <!-- ADMIN MODULE -->
+    <th:block th:if="${module == 'admin'}">
+        <div class="sidebar-heading">Admin Panel</div>
+        <ul class="sidebar-nav">
+            <li>
+                <a href="/admin/dashboard" class="sidebar-nav-link" th:classappend="${activePage == 'dashboard' ? 'active' : ''}">
+                    <span class="icon">📊</span> Dashboard
+                </a>
+            </li>
+            <li>
+                <a href="/admin/shelter-verification" class="sidebar-nav-link" th:classappend="${activePage == 'shelters' ? 'active' : ''}">
+                    <span class="icon">🏡</span> Shelter Owners / Shelters
+                </a>
+            </li>
+            <li>
+                <a href="/admin/pet-verification" class="sidebar-nav-link" th:classappend="${activePage == 'petverify' ? 'active' : ''}">
+                    <span class="icon">🔎</span> Pet Verification
+                </a>
+            </li>
+            <li>
+                <a href="/admin/pets" class="sidebar-nav-link" th:classappend="${activePage == 'pets' ? 'active' : ''}">
+                    <span class="icon">🐶</span> Pets Catalog
+                </a>
+            </li>
+            <li>
+                <a href="/admin/users" class="sidebar-nav-link" th:classappend="${activePage == 'users' ? 'active' : ''}">
+                    <span class="icon">👤</span> Users Management
+                </a>
+            </li>
+            <li>
+                <a href="/admin/adoption-requests" class="sidebar-nav-link" th:classappend="${activePage == 'adoptions' ? 'active' : ''}">
+                    <span class="icon">📄</span> Adoption Requests
+                </a>
+            </li>
+            <li>
+                <a href="/admin/dashboard" class="sidebar-nav-link">
+                    <span class="icon">📅</span> Pet Care Bookings
+                </a>
+            </li>
+            <li>
+                <a href="/admin/dashboard" class="sidebar-nav-link">
+                    <span class="icon">🐕</span> Active Stays
+                </a>
+            </li>
+            <li>
+                <a href="/admin/dashboard" class="sidebar-nav-link">
+                    <span class="icon">📈</span> Reports
+                </a>
+            </li>
+            <li>
+                <a href="/admin/shelter-reviews" class="sidebar-nav-link" th:classappend="${activePage == 'reviews' ? 'active' : ''}">
+                    <span class="icon">⭐</span> Shelter Reviews
+                </a>
+            </li>
+            <li>
+                <a href="/admin/settings" class="sidebar-nav-link" th:classappend="${activePage == 'settings' ? 'active' : ''}">
+                    <span class="icon">⚙️</span> Settings
+                </a>
+            </li>
+            <li>
+                <a href="/admin/notifications" class="sidebar-nav-link" th:classappend="${activePage == 'notifications' ? 'active' : ''}">
+                    <span class="icon">🔔</span> Notifications
+                    <span class="badge bg-danger rounded-pill ms-auto" th:if="${unreadNotificationsCount != null && unreadNotificationsCount > 0}" th:text="${unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}">1</span>
+                </a>
+            </li>
+            <li>
+                <a href="/logout" class="sidebar-nav-link">
+                    <span class="icon">🚪</span> Logout
+                </a>
+            </li>
+        </ul>
+    </th:block>
+</div>

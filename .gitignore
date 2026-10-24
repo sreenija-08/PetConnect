@@ -1,0 +1,58 @@
+# Compiled class file
+*.class
+
+# Log files
+*.log
+
+# Package Files
+target/
+*.war
+*.nar
+*.ear
+
+# Maven
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+
+# Bundled local maven binaries & temporary scratch files
+maven/
+scratch/
+pom - Copy.xml
+recent_inputs.txt
+doc_paragraphs.txt
+
+# Python & AI Service
+ai_service/__pycache__/
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+.venv
+env/
+venv/
+ENV/
+
+# IDE & Editor files
+.idea/
+*.iml
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
+
+# User uploaded media
+uploads/pets/*
+uploads/shelter-docs/*
+uploads/shelter-documents/*
+uploads/shelters/*
+!uploads/**/.gitkeep

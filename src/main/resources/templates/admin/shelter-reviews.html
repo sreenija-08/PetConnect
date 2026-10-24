@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shelter Reviews Audit - Admin - PetConnect</title>
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts (Outfit) -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .stars {
+            color: #F59E0B;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar('admin', 'reviews')}"></div>
+
+        <div class="content-wrapper">
+            <!-- Header -->
+            <div th:replace="~{fragments/header :: header('Platform Admin', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200')}"></div>
+
+            <main class="main-content">
+                <div class="container-fluid">
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="fw-bold mb-1">Adopter Shelter Reviews ⭐</h2>
+                            <p class="text-muted mb-0">Platform-wide audit of community feedback and ratings submitted by adopters after completed adoptions.</p>
+                        </div>
+                    </div>
+
+                    <!-- Reviews Table Card -->
+                    <div class="card border-0 shadow-sm rounded-card overflow-hidden">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Shelter</th>
+                                        <th>Rating</th>
+                                        <th>Adopter / User</th>
+                                        <th>Adopted Pet</th>
+                                        <th>Review Comment</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="r : ${reviews}">
+                                        <td>
+                                            <strong class="text-purple d-block" th:text="${r.shelter.name}">Happy Paws Shelter</strong>
+                                            <small class="text-muted" th:text="${r.shelter.location}">Chennai</small>
+                                        </td>
+                                        <td>
+                                            <div class="stars" th:text="${r.starsDisplay}">★★★★★</div>
+                                            <span class="badge bg-warning-subtle text-dark px-2 py-1 rounded-pill small fw-semibold" th:text="${r.rating + ' / 5'}">5 / 5</span>
+                                        </td>
+                                        <td>
+                                            <strong class="text-dark d-block" th:text="${r.user.fullName}">Adopter Name</strong>
+                                            <small class="text-muted" th:text="${r.user.email}">user@email.com</small>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <img th:src="${r.pet.displayPhoto}" onerror="this.src='https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=80'" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
+                                                <span class="fw-semibold text-dark" th:text="${r.pet.name}">Bruno</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <p class="mb-0 text-dark small" style="max-width: 320px;" th:text="${r.comment}">Great experience!</p>
+                                        </td>
+                                        <td class="text-muted small" th:text="${#temporals.format(r.createdAt, 'dd MMM yyyy, hh:mm a')}">
+                                            07 Sep 2026
+                                        </td>
+                                    </tr>
+
+                                    <!-- Empty State -->
+                                    <tr th:if="${reviews == null or #lists.isEmpty(reviews)}">
+                                        <td colspan="6" class="text-center py-5">
+                                            <div class="p-4">
+                                                <span class="fs-1">⭐</span>
+                                                <h5 class="fw-bold mt-2 mb-1">No Shelter Reviews Yet</h5>
+                                                <p class="text-muted mb-0">Adopter feedback will appear here once users submit shelter reviews after completed adoptions.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="footer py-4 text-center mt-auto border-top bg-white">
+                <div class="container">
+                    <p class="mb-0 text-muted">&copy; 2026 PetConnect. All rights reserved. Connect. Care. Adopt.</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

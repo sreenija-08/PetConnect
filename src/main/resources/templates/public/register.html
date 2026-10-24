@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - PetConnect</title>
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts (Outfit) -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar(${loggedInUser != null ? (loggedInUser.roles.?[name == 'ROLE_ADMIN'].size() > 0 ? 'admin' : (loggedInUser.roles.?[name == 'ROLE_SHELTER_OWNER'].size() > 0 ? 'owner' : 'user')) : 'public'}, 'register')}"></div>
+
+        <div class="content-wrapper">
+            <!-- Header -->
+            <div th:replace="~{fragments/header :: header('Guest', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200')}"></div>
+
+            <main class="main-content">
+                <div class="row g-5 align-items-center justify-content-center py-4">
+                    <!-- Left: Create Account Form -->
+                    <div class="col-lg-6">
+                        <div class="card border-0 shadow-sm p-4 rounded-card">
+                            <div class="text-center mb-4">
+                                <h2 class="fw-bold mb-1" id="formHeaderTitle">Create Account</h2>
+                                <p class="text-muted" id="formHeaderSubtitle">Join our community today</p>
+                            </div>
+
+                            <!-- Client-side Error Alert Banner -->
+                            <div id="clientErrorAlert" class="alert alert-danger border-0 py-2 rounded-4 small mb-3 text-center d-none" role="alert">
+                                <span id="clientErrorMessage"></span>
+                            </div>
+
+                            <!-- Server-side Global Errors -->
+                            <div th:if="${#fields.hasErrors('${user.*}')}" class="alert alert-danger border-0 py-2 rounded-4 small mb-3">
+                                <ul class="mb-0 ps-3">
+                                    <li th:each="err : ${#fields.errors('${user.*}')}" th:text="${err}">Error</li>
+                                </ul>
+                            </div>
+
+                            <!-- Registration form bound to th:object -->
+                            <form th:action="@{/register}" th:object="${user}" method="POST" id="registerForm" novalidate>
+                                
+                                <!-- ======================================================== -->
+                                <!-- STEP 1: Account Information                              -->
+                                <!-- ======================================================== -->
+                                <div id="step1Section" style="display: block;">
+                                    <!-- Role Selection -->
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold text-muted small text-uppercase" for="roleSelect">I am a</label>
+                                        <select th:field="*{role}" id="roleSelect" class="form-select rounded-pill border-light bg-light py-2 px-3" onchange="updateRoleView()" required>
+                                            <option value="" disabled th:selected="${user.role == null}">Select Role</option>
+                                            <option value="user">User (Adopter / Pet Owner)</option>
+                                            <option value="owner">Shelter Owner (Verified Rescue Group)</option>
+                                        </select>
+                                        <div th:if="${#fields.hasErrors('role')}" th:errors="*{role}" class="text-danger small ps-2 mt-1"></div>
+                                    </div>
+                                    
+                                    <!-- Full Name -->
+                                    <div class="mb-3">
+                                        <label for="fullName" class="form-label fw-semibold text-muted small text-uppercase">Full Name</label>
+                                        <input type="text" th:field="*{fullName}" class="form-control rounded-pill border-light bg-light py-2 px-3" id="fullName" placeholder="Enter your full name" required>
+                                        <div th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}" class="text-danger small ps-2 mt-1"></div>
+                                    </div>
+                                    
+                                    <!-- Email -->
+                                    <div class="mb-3">
+                                        <label for="email" class="form-label fw-semibold text-muted small text-uppercase">Email</label>
+                                        <input type="email" th:field="*{email}" class="form-control rounded-pill border-light bg-light py-2 px-3" id="email" placeholder="Enter your email" required>
+                                        <div th:if="${#fields.hasErrors('email')}" th:errors="*{email}" class="text-danger small ps-2 mt-1"></div>
+                                    </div>
+                                    
+                                    <!-- Password -->
+                                    <div class="mb-3">
+                                        <label for="password" class="form-label fw-semibold text-muted small text-uppercase">Password</label>
+                                        <div class="password-input-wrapper">
+                                            <input type="password" th:field="*{password}" class="form-control rounded-pill border-light bg-light py-2 px-3" id="password" placeholder="Create a password" required minlength="6">
+                                            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('password', this)" aria-label="Show password" title="Show password">👁️</button>
+                                        </div>
+                                        <div th:if="${#fields.hasErrors('password')}" th:errors="*{password}" class="text-danger small ps-2 mt-1"></div>
+                                    </div>
+
+                                    <!-- Confirm Password -->
+                                    <div class="mb-3" id="confirmPasswordGroup">
+                                        <label for="confirmPassword" class="form-label fw-semibold text-muted small text-uppercase">Confirm Password</label>
+                                        <div class="password-input-wrapper">
+                                            <input type="password" th:field="*{confirmPassword}" class="form-control rounded-pill border-light bg-light py-2 px-3" id="confirmPassword" placeholder="Confirm your password" required minlength="6">
+                                            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('confirmPassword', this)" aria-label="Show password" title="Show password">👁️</button>
+                                        </div>
+                                        <div th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}" class="text-danger small ps-2 mt-1"></div>
+                                    </div>
+
+                                    <!-- Phone -->
+                                    <div class="mb-3">
+                                        <label for="phone" class="form-label fw-semibold text-muted small text-uppercase">Phone</label>
+                                        <input type="text" th:field="*{phone}" class="form-control rounded-pill border-light bg-light py-2 px-3" id="phone" placeholder="Enter your phone number" required>
+                                        <div th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}" class="text-danger small ps-2 mt-1"></div>
+                                    </div>
+
+                                    <!-- Action Button for USER: Register -->
+                                    <button type="submit" id="userRegisterBtn" class="btn btn-purple w-100 py-3 mt-3 rounded-pill fw-semibold">Register</button>
+
+                                    <!-- Action Button for SHELTER_OWNER: Continue -->
+                                    <button type="button" id="ownerContinueBtn" onclick="handleContinue(event)" class="btn btn-purple w-100 py-3 mt-3 rounded-pill fw-semibold d-none" style="display: none;">Continue</button>
+                                </div>
+
+                                <!-- ======================================================== -->
+                                <!-- STEP 2: Shelter Details (Only for SHELTER_OWNER)         -->
+                                <!-- ======================================================== -->
+                                <div id="step2Section" class="d-none" style="display: none;">
+                                    <div class="d-flex align-items-center gap-2 mb-3">
+                                        <span class="fs-4">🏡</span>
+                                        <h4 class="fw-bold mb-0 text-purple">2. Shelter Details</h4>
+                                    </div>
+                                    <p class="text-muted small mb-4">Provide information about your rescue sanctuary and operational location.</p>
+
+                                    <!-- Shelter Name -->
+                                    <div class="mb-3">
+                                        <label for="shelterName" class="form-label fw-semibold text-muted small text-uppercase">Shelter Name *</label>
+                                        <input type="text" th:field="*{shelterName}" class="form-control rounded-pill border-light bg-light py-2 px-3" id="shelterName" placeholder="Enter shelter name">
+                                        <div th:if="${#fields.hasErrors('shelterName')}" th:errors="*{shelterName}" class="text-danger small ps-2 mt-1"></div>
+                                    </div>
+
+                                    <!-- Area / Place -->
+                                    <div class="mb-3">
+                                        <label for="area" class="form-label fw-semibold text-muted small text-uppercase">Area / Place *</label>
+                                        <input type="text" th:field="*{area}" class="form-control rounded-pill border-light bg-light py-2 px-3" id="area" placeholder="Enter area or place">
+                                        <div th:if="${#fields.hasErrors('area')}" th:errors="*{area}" class="text-danger small ps-2 mt-1"></div>
+                                    </div>
+
+                                    <div class="row">
+                                        <!-- City -->
+                                        <div class="col-md-6 mb-3">
+                                            <label for="city" class="form-label fw-semibold text-muted small text-uppercase">City *</label>
+                                            <input type="text" th:field="*{city}" class="form-control rounded-pill border-light bg-light py-2 px-3" id="city" placeholder="Enter city">
+                                            <div th:if="${#fields.hasErrors('city')}" th:errors="*{city}" class="text-danger small ps-2 mt-1"></div>
+                                        </div>
+
+                                        <!-- State -->
+                                        <div class="col-md-6 mb-3">
+                                            <label for="state" class="form-label fw-semibold text-muted small text-uppercase">State *</label>
+                                            <input type="text" th:field="*{state}" class="form-control rounded-pill border-light bg-light py-2 px-3" id="state" placeholder="Enter state">
+                                            <div th:if="${#fields.hasErrors('state')}" th:errors="*{state}" class="text-danger small ps-2 mt-1"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Full Physical Address -->
+                                    <div class="mb-3">
+                                        <label for="address" class="form-label fw-semibold text-muted small text-uppercase">Full Physical Address *</label>
+                                        <input type="text" th:field="*{address}" class="form-control rounded-pill border-light bg-light py-2 px-3" id="address" placeholder="Enter full physical address">
+                                        <div th:if="${#fields.hasErrors('address')}" th:errors="*{address}" class="text-danger small ps-2 mt-1"></div>
+                                    </div>
+
+                                    <!-- General Location -->
+                                    <div class="mb-3">
+                                        <label for="location" class="form-label fw-semibold text-muted small text-uppercase">General Location *</label>
+                                        <input type="text" th:field="*{location}" class="form-control rounded-pill border-light bg-light py-2 px-3" id="location" placeholder="Enter general location">
+                                        <div th:if="${#fields.hasErrors('location')}" th:errors="*{location}" class="text-danger small ps-2 mt-1"></div>
+                                    </div>
+
+                                    <!-- Step 2 Buttons: Back & Register Shelter -->
+                                    <div class="d-flex gap-3 mt-4">
+                                        <button type="button" id="step2BackBtn" onclick="handleBack(event)" class="btn btn-outline-secondary w-50 py-3 rounded-pill fw-semibold">Back</button>
+                                        <button type="submit" id="shelterSubmitBtn" class="btn btn-purple w-50 py-3 rounded-pill fw-semibold">Register Shelter</button>
+                                    </div>
+                                </div>
+                            </form>
+
+                            <div class="text-center mt-3">
+                                <p class="text-muted mb-0 small">Already have an account? <a href="/login" class="text-purple fw-semibold text-decoration-none">Login</a></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Info Panel / Role Descriptions -->
+                    <div class="col-lg-5">
+                        <h4 class="fw-bold mb-4">Choose Your Role</h4>
+                        <p class="text-muted mb-4">Select how you want to join our platform to access tailored tools and options:</p>
+
+                        <!-- User Info -->
+                        <div class="d-flex gap-3 mb-4 bg-white p-3 rounded-4 shadow-sm border-start border-purple border-4">
+                            <div class="fs-2">👤</div>
+                            <div>
+                                <h5 class="fw-bold mb-1">User</h5>
+                                <p class="text-muted small mb-0">I want to adopt a pet or find temporary care/boarding services for my own pets.</p>
+                            </div>
+                        </div>
+
+                        <!-- Shelter Owner Info -->
+                        <div class="d-flex gap-3 mb-4 bg-white p-3 rounded-4 shadow-sm border-start border-warning border-4">
+                            <div class="fs-2">🏡</div>
+                            <div>
+                                <h5 class="fw-bold mb-1">Shelter Owner</h5>
+                                <p class="text-muted small mb-0">I run a shelter or rescue organization and want to list pets, handle adoptions, and manage stays.</p>
+                            </div>
+                        </div>
+
+                        <!-- Admin Info -->
+                        <div class="d-flex gap-3 bg-white p-3 rounded-4 shadow-sm border-start border-info border-4">
+                            <div class="fs-2">🛡️</div>
+                            <div>
+                                <h5 class="fw-bold mb-1">Admin</h5>
+                                <p class="text-muted small mb-0">I manage the platform, verify shelters, oversee requests, and resolve disputes.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="footer py-4 text-center mt-auto border-top bg-white">
+                <div class="container">
+                    <p class="mb-0 text-muted">&copy; 2026 PetConnect. All rights reserved. Connect. Care. Adopt.</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Registration Dynamic Steps Controller -->
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '🙈';
+                btn.setAttribute('aria-label', 'Hide password');
+                btn.setAttribute('title', 'Hide password');
+            } else {
+                input.type = 'password';
+                btn.textContent = '👁️';
+                btn.setAttribute('aria-label', 'Show password');
+                btn.setAttribute('title', 'Show password');
+            }
+        }
+        window.togglePasswordVisibility = togglePasswordVisibility;
+
+        function showError(msg) {
+            const clientErrorAlert = document.getElementById('clientErrorAlert');
+            const clientErrorMessage = document.getElementById('clientErrorMessage');
+            if (clientErrorMessage && clientErrorAlert) {
+                clientErrorMessage.textContent = msg;
+                clientErrorAlert.classList.remove('d-none');
+                clientErrorAlert.style.display = 'block';
+                clientErrorAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        function clearError() {
+            const clientErrorAlert = document.getElementById('clientErrorAlert');
+            const clientErrorMessage = document.getElementById('clientErrorMessage');
+            if (clientErrorAlert) {
+                clientErrorAlert.classList.add('d-none');
+                clientErrorAlert.style.display = 'none';
+            }
+            if (clientErrorMessage) {
+                clientErrorMessage.textContent = '';
+            }
+        }
+
+        function isOwnerSelected() {
+            const roleSelect = document.getElementById('roleSelect');
+            if (!roleSelect) return false;
+            const val = roleSelect.value;
+            return val === 'owner' || val === 'ROLE_SHELTER_OWNER' || val === 'shelter_owner';
+        }
+
+        function updateRoleView() {
+            clearError();
+            const roleSelect = document.getElementById('roleSelect');
+            const userRegisterBtn = document.getElementById('userRegisterBtn');
+            const ownerContinueBtn = document.getElementById('ownerContinueBtn');
+            const step1Section = document.getElementById('step1Section');
+            const step2Section = document.getElementById('step2Section');
+
+            if (!roleSelect) return;
+
+            if (isOwnerSelected()) {
+                if (userRegisterBtn) {
+                    userRegisterBtn.classList.add('d-none');
+                    userRegisterBtn.style.display = 'none';
+                }
+                if (ownerContinueBtn) {
+                    ownerContinueBtn.classList.remove('d-none');
+                    ownerContinueBtn.style.display = 'block';
+                }
+            } else {
+                // USER role selected
+                if (userRegisterBtn) {
+                    userRegisterBtn.classList.remove('d-none');
+                    userRegisterBtn.style.display = 'block';
+                }
+                if (ownerContinueBtn) {
+                    ownerContinueBtn.classList.add('d-none');
+                    ownerContinueBtn.style.display = 'none';
+                }
+                // Ensure step 2 is never shown for USER
+                if (step2Section) {
+                    step2Section.classList.add('d-none');
+                    step2Section.style.display = 'none';
+                }
+                if (step1Section) {
+                    step1Section.classList.remove('d-none');
+                    step1Section.style.display = 'block';
+                }
+            }
+        }
+
+        function goToStep2() {
+            clearError();
+            const step1Section = document.getElementById('step1Section');
+            const step2Section = document.getElementById('step2Section');
+            const formHeaderTitle = document.getElementById('formHeaderTitle');
+            const formHeaderSubtitle = document.getElementById('formHeaderSubtitle');
+
+            if (step1Section) {
+                step1Section.classList.add('d-none');
+                step1Section.style.display = 'none';
+            }
+            if (step2Section) {
+                step2Section.classList.remove('d-none');
+                step2Section.style.display = 'block';
+            }
+            if (formHeaderTitle) formHeaderTitle.textContent = 'Shelter Registration';
+            if (formHeaderSubtitle) formHeaderSubtitle.textContent = 'Step 2: Shelter Details & Location';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function goToStep1() {
+            clearError();
+            const step1Section = document.getElementById('step1Section');
+            const step2Section = document.getElementById('step2Section');
+            const formHeaderTitle = document.getElementById('formHeaderTitle');
+            const formHeaderSubtitle = document.getElementById('formHeaderSubtitle');
+
+            if (step2Section) {
+                step2Section.classList.add('d-none');
+                step2Section.style.display = 'none';
+            }
+            if (step1Section) {
+                step1Section.classList.remove('d-none');
+                step1Section.style.display = 'block';
+            }
+            if (formHeaderTitle) formHeaderTitle.textContent = 'Create Account';
+            if (formHeaderSubtitle) formHeaderSubtitle.textContent = 'Join our community today';
+        }
+
+        function handleContinue(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            clearError();
+
+            const roleSelect = document.getElementById('roleSelect');
+            const fullNameInput = document.getElementById('fullName');
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
+            const phoneInput = document.getElementById('phone');
+
+            const fullName = fullNameInput ? fullNameInput.value.trim() : '';
+            const email = emailInput ? emailInput.value.trim() : '';
+            const password = passwordInput ? passwordInput.value : '';
+            const confirmPassword = confirmPasswordInput ? confirmPasswordInput.value : '';
+            const phone = phoneInput ? phoneInput.value.trim() : '';
+
+            if (!roleSelect || !roleSelect.value) {
+                showError('Please select a role.');
+                if (roleSelect) roleSelect.focus();
+                return;
+            }
+
+            if (!fullName) {
+                showError('Full name is required.');
+                if (fullNameInput) fullNameInput.focus();
+                return;
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!email || !emailRegex.test(email)) {
+                showError('Please enter a valid email address.');
+                if (emailInput) emailInput.focus();
+                return;
+            }
+
+            if (!password || password.length < 6) {
+                showError('Password must be at least 6 characters long.');
+                if (passwordInput) passwordInput.focus();
+                return;
+            }
+
+            if (!confirmPassword) {
+                showError('Please confirm your password.');
+                if (confirmPasswordInput) confirmPasswordInput.focus();
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showError('Passwords do not match.');
+                if (confirmPasswordInput) confirmPasswordInput.focus();
+                return;
+            }
+
+            if (!phone) {
+                showError('Phone number is required.');
+                if (phoneInput) phoneInput.focus();
+                return;
+            }
+
+            // If Step 1 passes validation, transition to Step 2
+            goToStep2();
+        }
+
+        function handleBack(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            goToStep1();
+        }
+
+        // Expose globally for inline onclick handlers
+        window.handleContinue = handleContinue;
+        window.handleBack = handleBack;
+        window.updateRoleView = updateRoleView;
+        window.goToStep1 = goToStep1;
+        window.goToStep2 = goToStep2;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const roleSelect = document.getElementById('roleSelect');
+            const registerForm = document.getElementById('registerForm');
+            const ownerContinueBtn = document.getElementById('ownerContinueBtn');
+            const step2BackBtn = document.getElementById('step2BackBtn');
+
+            const shelterNameInput = document.getElementById('shelterName');
+            const areaInput = document.getElementById('area');
+            const cityInput = document.getElementById('city');
+            const stateInput = document.getElementById('state');
+            const addressInput = document.getElementById('address');
+            const locationInput = document.getElementById('location');
+
+            const passwordInput = document.getElementById('password');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
+
+            // Server-side passed initial step if returning with validation errors
+            const serverStep = /*[[${currentStep != null ? currentStep : 1}]]*/ 1;
+
+            if (roleSelect) {
+                roleSelect.addEventListener('change', updateRoleView);
+            }
+
+            if (ownerContinueBtn) {
+                ownerContinueBtn.addEventListener('click', handleContinue);
+            }
+
+            if (step2BackBtn) {
+                step2BackBtn.addEventListener('click', handleBack);
+            }
+
+            updateRoleView();
+
+            if (serverStep === 2 && isOwnerSelected()) {
+                goToStep2();
+            }
+
+            if (registerForm) {
+                registerForm.addEventListener('submit', function(e) {
+                    clearError();
+                    if (isOwnerSelected()) {
+                        // Validate Step 1 first
+                        const fullNameInput = document.getElementById('fullName');
+                        const emailInput = document.getElementById('email');
+                        const phoneInput = document.getElementById('phone');
+
+                        if (!fullNameInput || !fullNameInput.value.trim()) {
+                            e.preventDefault();
+                            goToStep1();
+                            showError('Full name is required.');
+                            if (fullNameInput) fullNameInput.focus();
+                            return;
+                        }
+
+                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                        if (!emailInput || !emailInput.value.trim() || !emailRegex.test(emailInput.value.trim())) {
+                            e.preventDefault();
+                            goToStep1();
+                            showError('Please enter a valid email address.');
+                            if (emailInput) emailInput.focus();
+                            return;
+                        }
+
+                        if (!passwordInput || !passwordInput.value || passwordInput.value.length < 6) {
+                            e.preventDefault();
+                            goToStep1();
+                            showError('Password must be at least 6 characters long.');
+                            if (passwordInput) passwordInput.focus();
+                            return;
+                        }
+
+                        if (!confirmPasswordInput || !confirmPasswordInput.value || passwordInput.value !== confirmPasswordInput.value) {
+                            e.preventDefault();
+                            goToStep1();
+                            showError('Passwords do not match.');
+                            if (confirmPasswordInput) confirmPasswordInput.focus();
+                            return;
+                        }
+
+                        if (!phoneInput || !phoneInput.value.trim()) {
+                            e.preventDefault();
+                            goToStep1();
+                            showError('Phone number is required.');
+                            if (phoneInput) phoneInput.focus();
+                            return;
+                        }
+
+                        // Validate Step 2 fields
+                        if (!shelterNameInput || !shelterNameInput.value.trim()) {
+                            e.preventDefault();
+                            showError('Shelter Name is required.');
+                            if (shelterNameInput) shelterNameInput.focus();
+                            return;
+                        }
+                        if (!areaInput || !areaInput.value.trim()) {
+                            e.preventDefault();
+                            showError('Area / Place is required.');
+                            if (areaInput) areaInput.focus();
+                            return;
+                        }
+                        if (!cityInput || !cityInput.value.trim()) {
+                            e.preventDefault();
+                            showError('City is required.');
+                            if (cityInput) cityInput.focus();
+                            return;
+                        }
+                        if (!stateInput || !stateInput.value.trim()) {
+                            e.preventDefault();
+                            showError('State is required.');
+                            if (stateInput) stateInput.focus();
+                            return;
+                        }
+                        if (!addressInput || !addressInput.value.trim()) {
+                            e.preventDefault();
+                            showError('Full Physical Address is required.');
+                            if (addressInput) addressInput.focus();
+                            return;
+                        }
+                        if (!locationInput || !locationInput.value.trim()) {
+                            e.preventDefault();
+                            showError('General Location is required.');
+                            if (locationInput) locationInput.focus();
+                            return;
+                        }
+                    } else {
+                        // USER role submit validation
+                        if (!passwordInput || !passwordInput.value || passwordInput.value.length < 6) {
+                            e.preventDefault();
+                            showError('Password must be at least 6 characters long.');
+                            if (passwordInput) passwordInput.focus();
+                            return;
+                        }
+                        if (confirmPasswordInput && confirmPasswordInput.value && passwordInput.value !== confirmPasswordInput.value) {
+                            e.preventDefault();
+                            showError('Passwords do not match.');
+                            if (confirmPasswordInput) confirmPasswordInput.focus();
+                            return;
+                        }
+                    }
+                });
+            }
+        });
+        /*]]>*/
+    </script>
+</body>
+</html>

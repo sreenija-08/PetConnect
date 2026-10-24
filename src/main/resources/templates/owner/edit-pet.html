@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Pet Profile - PetConnect</title>
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts (Outfit) -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar('owner', 'pets')}"></div>
+
+        <div class="content-wrapper">
+            <!-- Header -->
+            <div th:replace="~{fragments/header :: header(${loggedInUser != null ? loggedInUser.fullName : 'Shelter Owner'}, 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200')}"></div>
+
+            <main class="main-content d-flex align-items-center justify-content-center py-4">
+                <div class="card border-0 shadow-sm p-4 rounded-card" style="max-width: 680px; width: 100%;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <a th:href="@{/owner/my-pets}" class="text-decoration-none text-muted small">&larr; Back to My Pets</a>
+                            <h3 class="fw-bold mt-1 mb-0">Edit Pet Profile: <span class="text-purple" th:text="${pet.name}">Bruno</span></h3>
+                        </div>
+                        <span class="badge bg-purple-subtle text-purple py-2 px-3 rounded-pill" th:text="${shelter != null ? shelter.name : 'Your Shelter'}">Happy Paws Shelter</span>
+                    </div>
+
+                    <form th:action="@{/owner/edit-pet/{id}(id=${pet.id})}" method="POST" enctype="multipart/form-data">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="petName" class="form-label fw-semibold text-muted small text-uppercase">Pet Name</label>
+                                <input type="text" name="name" class="form-control rounded-pill border-light bg-light py-2 px-3" id="petName" th:value="${pet.name}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold text-muted small text-uppercase">Type</label>
+                                <select name="type" class="form-select rounded-pill border-light bg-light py-2 px-3" required>
+                                    <option value="DOG" th:selected="${pet.type == 'DOG'}">Dog</option>
+                                    <option value="CAT" th:selected="${pet.type == 'CAT'}">Cat</option>
+                                    <option value="RABBIT" th:selected="${pet.type == 'RABBIT'}">Rabbit</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="breed" class="form-label fw-semibold text-muted small text-uppercase">Breed</label>
+                                <input type="text" name="breed" class="form-control rounded-pill border-light bg-light py-2 px-3" id="breed" th:value="${pet.breed}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold text-muted small text-uppercase">Gender</label>
+                                <select name="gender" class="form-select rounded-pill border-light bg-light py-2 px-3" required>
+                                    <option value="Male" th:selected="${pet.gender == 'Male'}">Male</option>
+                                    <option value="Female" th:selected="${pet.gender == 'Female'}">Female</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="age" class="form-label fw-semibold text-muted small text-uppercase">Age (Years)</label>
+                                <input type="number" name="age" class="form-control rounded-pill border-light bg-light py-2 px-3" id="age" th:value="${pet.age}" required min="0" max="30">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-semibold text-muted small text-uppercase">Size</label>
+                                <select name="size" class="form-select rounded-pill border-light bg-light py-2 px-3">
+                                    <option value="Small" th:selected="${pet.size == 'Small'}">Small</option>
+                                    <option value="Medium" th:selected="${pet.size == 'Medium'}">Medium</option>
+                                    <option value="Large" th:selected="${pet.size == 'Large'}">Large</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="color" class="form-label fw-semibold text-muted small text-uppercase">Color</label>
+                                <input type="text" name="color" class="form-control rounded-pill border-light bg-light py-2 px-3" id="color" th:value="${pet.color}">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="healthInfo" class="form-label fw-semibold text-muted small text-uppercase">Health Information</label>
+                                <input type="text" name="healthInfo" class="form-control rounded-pill border-light bg-light py-2 px-3" id="healthInfo" th:value="${pet.healthInfo}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold text-muted small text-uppercase">Vaccination Status</label>
+                                <select name="vaccinationStatus" class="form-select rounded-pill border-light bg-light py-2 px-3">
+                                    <option value="Vaccinated" th:selected="${pet.vaccinationStatus == 'Vaccinated'}">Vaccinated</option>
+                                    <option value="Partially Vaccinated" th:selected="${pet.vaccinationStatus == 'Partially Vaccinated'}">Partially Vaccinated</option>
+                                    <option value="Not Vaccinated" th:selected="${pet.vaccinationStatus == 'Not Vaccinated'}">Not Vaccinated</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-muted small text-uppercase">Current Pet Photo</label>
+                            <div class="d-flex align-items-center gap-3 mb-2 p-2 bg-light rounded-4">
+                                <img th:src="${pet.displayPhoto}" alt="Pet Photo" class="rounded-3 shadow-sm" style="width: 80px; height: 80px; object-fit: cover;">
+                                <div>
+                                    <div class="small fw-semibold text-dark">Current Photo Displayed</div>
+                                    <small class="text-muted">Choose a new file below to update this pet's photo across PetConnect.</small>
+                                </div>
+                            </div>
+
+                            <label for="petPhotoInput" class="form-label fw-semibold text-muted small text-uppercase mt-2">Change Pet Photo</label>
+                            <input type="file" name="petPhoto" class="form-control rounded-pill border-light bg-light py-2 px-3" id="petPhotoInput" accept="image/jpeg,image/png,image/webp">
+                            <div class="form-text text-muted small">Supported formats: JPG, JPEG, PNG, WEBP (Max 5 MB).</div>
+                            <div id="petPhotoPreviewContainer" class="mt-3 text-center d-none">
+                                <p class="text-muted small mb-1">New Photo Preview:</p>
+                                <img id="petPhotoPreview" src="#" alt="New Preview" class="rounded-4 shadow-sm" style="max-height: 180px; max-width: 100%; object-fit: cover;">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="imageUpload" class="form-label fw-semibold text-muted small text-uppercase">Or External Image URL</label>
+                            <input type="text" name="imagePath" class="form-control rounded-pill border-light bg-light py-2 px-3" id="imageUpload" th:value="${pet.imagePath}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="rescueStory" class="form-label fw-semibold text-muted small text-uppercase">Rescue Story</label>
+                            <textarea name="rescueStory" class="form-control rounded-4 border-light bg-light py-2 px-3" id="rescueStory" rows="2" th:text="${pet.rescueStory}"></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="description" class="form-label fw-semibold text-muted small text-uppercase">Personality & Description</label>
+                            <textarea name="description" class="form-control rounded-4 border-light bg-light py-2 px-3" id="description" rows="3" th:text="${pet.description}"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-purple w-100 py-3 rounded-pill fw-bold fs-6 shadow-sm">Save Changes</button>
+                    </form>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="footer py-4 text-center mt-auto border-top bg-white">
+                <div class="container">
+                    <p class="mb-0 text-muted">&copy; 2026 PetConnect. All rights reserved. Connect. Care. Adopt.</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const petPhotoInput = document.getElementById('petPhotoInput');
+        if (petPhotoInput) {
+            petPhotoInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                const previewContainer = document.getElementById('petPhotoPreviewContainer');
+                const previewImg = document.getElementById('petPhotoPreview');
+                if (file) {
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('File size exceeds 5MB limit. Please upload a valid JPG, PNG, or WEBP image under 5 MB.');
+                        this.value = '';
+                        previewContainer.classList.add('d-none');
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = function(ev) {
+                        previewImg.src = ev.target.result;
+                        previewContainer.classList.remove('d-none');
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    previewContainer.classList.add('d-none');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

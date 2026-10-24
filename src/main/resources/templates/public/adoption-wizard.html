@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adoption Application Wizard - PetConnect</title>
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts (Outfit) -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .step-pill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 18px;
+            border-radius: 50px;
+            background: #F3F4F6;
+            color: #6B7280;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        .step-pill.active {
+            background: #5C3BEB;
+            color: #FFFFFF;
+            box-shadow: 0 4px 12px rgba(92, 59, 235, 0.25);
+        }
+        .step-pill.completed {
+            background: #E0E7FF;
+            color: #4338CA;
+        }
+        .step-circle {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            background: rgba(0, 0, 0, 0.08);
+        }
+        .step-pill.active .step-circle {
+            background: #FFFFFF;
+            color: #5C3BEB;
+            font-weight: 700;
+        }
+        .review-box {
+            background: #F9FAFB;
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid #E5E7EB;
+        }
+        .review-label {
+            font-size: 0.85rem;
+            color: #6B7280;
+            margin-bottom: 2px;
+        }
+        .review-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111827;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar(${loggedInUser != null ? (loggedInUser.roles.?[name == 'ROLE_ADMIN'].size() > 0 ? 'admin' : (loggedInUser.roles.?[name == 'ROLE_SHELTER_OWNER'].size() > 0 ? 'owner' : 'user')) : 'public'}, 'browse')}"></div>
+
+        <div class="content-wrapper">
+            <!-- Header -->
+            <div th:replace="~{fragments/header :: header('Guest', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200')}"></div>
+
+            <main class="main-content">
+                <div class="container py-3" style="max-width: 960px;">
+                    
+                    <!-- Back Link -->
+                    <div class="mb-3">
+                        <a th:href="@{/pet/{id}/adopt/readiness(id=${pet.id})}" class="text-decoration-none fw-semibold text-muted">&larr; Back to Readiness Check</a>
+                    </div>
+
+                    <!-- Wizard Progress Header -->
+                    <div class="card border-0 shadow-sm p-4 rounded-card mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h3 class="fw-bold mb-0">Adoption Application for <span class="text-purple" th:text="${pet.name}">Bruno</span></h3>
+                                <p class="text-muted small mb-0">Managed by <strong th:text="${shelter != null ? shelter.name : 'Local Shelter'}">Happy Paws Shelter</strong></p>
+                            </div>
+                            <span class="badge bg-purple-subtle text-purple px-3 py-2 rounded-pill fw-semibold" id="stepCounter">Step 1 of 4</span>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="progress mb-4" style="height: 6px; border-radius: 10px;">
+                            <div class="progress-bar bg-purple" id="wizardProgressBar" role="progressbar" style="width: 25%;"></div>
+                        </div>
+
+                        <!-- Step Tabs -->
+                        <div class="d-flex flex-wrap gap-2 justify-content-between">
+                            <div class="step-pill active" id="pill-1">
+                                <span class="step-circle">1</span>
+                                <span>About You</span>
+                            </div>
+                            <div class="step-pill" id="pill-2">
+                                <span class="step-circle">2</span>
+                                <span>Your Home</span>
+                            </div>
+                            <div class="step-pill" id="pill-3">
+                                <span class="step-circle">3</span>
+                                <span>Adoption</span>
+                            </div>
+                            <div class="step-pill" id="pill-4">
+                                <span class="step-circle">4</span>
+                                <span>Review</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Container -->
+                    <form th:action="@{/pet/{id}/adopt/submit(id=${pet.id})}" th:object="${form}" method="POST" id="adoptionWizardForm">
+                        <input type="hidden" th:field="*{petId}" th:value="${pet.id}">
+                        <input type="hidden" th:field="*{readinessQ1}">
+                        <input type="hidden" th:field="*{readinessQ2}">
+                        <input type="hidden" th:field="*{readinessQ3}">
+                        <input type="hidden" th:field="*{readinessQ4}">
+
+                        <!-- ==================== STEP 1: ABOUT YOU ==================== -->
+                        <div class="wizard-step" id="step-1">
+                            <div class="card border-0 shadow-sm p-4 p-md-5 rounded-card mb-4">
+                                <h4 class="fw-bold mb-1">Step 1 — About You</h4>
+                                <p class="text-muted small mb-4">Verify your personal details for the adoption agreement.</p>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control form-control-lg rounded-3" th:field="*{fullName}" id="inputFullName" required placeholder="Enter your full name">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Email Address <span class="text-danger">*</span></label>
+                                        <input type="email" class="form-control form-control-lg rounded-3" th:field="*{email}" id="inputEmail" required placeholder="name@example.com">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Phone Number <span class="text-danger">*</span></label>
+                                        <input type="tel" class="form-control form-control-lg rounded-3" th:field="*{phone}" id="inputPhone" required placeholder="e.g. 9876543210">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Current City <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control form-control-lg rounded-3" th:field="*{city}" id="inputCity" required placeholder="e.g. Chennai">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">Occupation / Daily Schedule</label>
+                                        <input type="text" class="form-control form-control-lg rounded-3" th:field="*{occupation}" id="inputOccupation" placeholder="e.g. Software Engineer (Hybrid / Work from home)">
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-end mt-4 pt-2">
+                                    <button type="button" class="btn btn-purple px-5 py-3 rounded-pill fw-bold" onclick="goToStep(2)">
+                                        Next: Your Home &rarr;
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ==================== STEP 2: YOUR HOME ==================== -->
+                        <div class="wizard-step d-none" id="step-2">
+                            <div class="card border-0 shadow-sm p-4 p-md-5 rounded-card mb-4">
+                                <h4 class="fw-bold mb-1">Step 2 — Home & Pet Experience</h4>
+                                <p class="text-muted small mb-4">Help the shelter understand your pet's future home environment.</p>
+
+                                <div class="row g-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Do you currently have pets?</label>
+                                        <select class="form-select form-select-lg rounded-3" th:field="*{currentPets}" id="inputCurrentPets">
+                                            <option value="No">No pets currently</option>
+                                            <option value="Yes - Dogs">Yes, I have dogs</option>
+                                            <option value="Yes - Cats">Yes, I have cats</option>
+                                            <option value="Yes - Both">Yes, dogs and cats</option>
+                                            <option value="Yes - Other">Yes, other animals</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Have you owned a pet before?</label>
+                                        <select class="form-select form-select-lg rounded-3" th:field="*{previousPetExperience}" id="inputPetExperience">
+                                            <option value="Yes">Yes, experienced pet parent</option>
+                                            <option value="First-time owner">No, this will be my first pet</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Type of Home</label>
+                                        <select class="form-select form-select-lg rounded-3" th:field="*{homeType}" id="inputHomeType">
+                                            <option value="Apartment">Apartment / Flat</option>
+                                            <option value="Independent House">Independent House with Yard</option>
+                                            <option value="Gated Villa">Gated Community / Villa</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Do you have permission to keep pets?</label>
+                                        <select class="form-select form-select-lg rounded-3" th:field="*{petPermission}" id="inputPetPermission">
+                                            <option value="Yes">Yes, landlord/association permits</option>
+                                            <option value="Own property">I own the property</option>
+                                            <option value="Not Applicable">Not Applicable</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">How many hours will the pet usually be alone daily?</label>
+                                        <select class="form-select form-select-lg rounded-3" th:field="*{hoursAlone}" id="inputHoursAlone">
+                                            <option value="Less than 2 hours">Less than 2 hours (Someone is always home)</option>
+                                            <option value="2–4 hours">2–4 hours</option>
+                                            <option value="4–8 hours">4–8 hours</option>
+                                            <option value="More than 8 hours">More than 8 hours</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between mt-4 pt-2">
+                                    <button type="button" class="btn btn-light px-4 py-3 rounded-pill fw-bold" onclick="goToStep(1)">
+                                        &larr; Previous
+                                    </button>
+                                    <button type="button" class="btn btn-purple px-5 py-3 rounded-pill fw-bold" onclick="goToStep(3)">
+                                        Next: Adoption Questions &rarr;
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ==================== STEP 3: ADOPTION QUESTIONS ==================== -->
+                        <div class="wizard-step d-none" id="step-3">
+                            <div class="card border-0 shadow-sm p-4 p-md-5 rounded-card mb-4">
+                                <h4 class="fw-bold mb-1">Step 3 — About Your Adoption</h4>
+                                <p class="text-muted small mb-4">Tell the shelter why you're enthusiastic about welcoming this pet into your home.</p>
+
+                                <div class="row g-4">
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">Why do you want to adopt <span th:text="${pet.name}">this pet</span>? <span class="text-danger">*</span></label>
+                                        <textarea class="form-control rounded-3" th:field="*{adoptionReason}" id="inputAdoptionReason" rows="3" required placeholder="Describe what attracted you to this pet and how they will fit into your family..."></textarea>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Who will primarily take care of the pet? <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control form-control-lg rounded-3" th:field="*{primaryCaretaker}" id="inputPrimaryCaretaker" required placeholder="e.g. Myself and family members">
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Are you prepared for regular pet-care expenses? <span class="text-danger">*</span></label>
+                                        <select class="form-select form-select-lg rounded-3" th:field="*{preparedForExpenses}" id="inputExpenses">
+                                            <option value="Yes">Yes, fully prepared for recurring expenses</option>
+                                            <option value="No">No / Unsure</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">Additional information for the shelter (Optional)</label>
+                                        <textarea class="form-control rounded-3" th:field="*{additionalInformation}" id="inputAdditionalInfo" rows="2" placeholder="Any special routines, fenced yard details, or questions for the shelter team..."></textarea>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <div class="form-check p-3 bg-light rounded-4">
+                                            <input class="form-check-input ms-0 me-3" type="checkbox" th:field="*{termsAccepted}" id="termsAccepted" required checked>
+                                            <label class="form-check-label fw-medium text-dark" for="termsAccepted">
+                                                I understand that submitting this application does not guarantee adoption and that the shelter and platform administrators will review my application before final approval.
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between mt-4 pt-2">
+                                    <button type="button" class="btn btn-light px-4 py-3 rounded-pill fw-bold" onclick="goToStep(2)">
+                                        &larr; Previous
+                                    </button>
+                                    <button type="button" class="btn btn-purple px-5 py-3 rounded-pill fw-bold" onclick="populateReview(); goToStep(4)">
+                                        Review Application &rarr;
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ==================== STEP 4: REVIEW APPLICATION ==================== -->
+                        <div class="wizard-step d-none" id="step-4">
+                            <div class="card border-0 shadow-sm p-4 p-md-5 rounded-card mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <h4 class="fw-bold mb-1">Step 4 — Review Your Application</h4>
+                                        <p class="text-muted small mb-0">Please review all information before final submission.</p>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-purple btn-sm rounded-pill px-3 py-1" onclick="goToStep(1)">
+                                        ✏️ Edit Details
+                                    </button>
+                                </div>
+
+                                <hr class="my-4 opacity-10">
+
+                                <!-- Pet Summary Box -->
+                                <div class="review-box mb-4">
+                                    <h6 class="fw-bold text-purple mb-3">🐾 Pet Information</h6>
+                                    <div class="row g-3">
+                                        <div class="col-sm-4">
+                                            <div class="review-label">Pet Name</div>
+                                            <div class="review-value" th:text="${pet.name}">Bruno</div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="review-label">Type & Breed</div>
+                                            <div class="review-value" th:text="${pet.type + ' • ' + pet.breed}">DOG • Labrador</div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="review-label">Age & Gender</div>
+                                            <div class="review-value" th:text="${pet.age + ' Yrs • ' + pet.gender}">2 Yrs • Male</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="review-label">Shelter</div>
+                                            <div class="review-value" th:text="${shelter != null ? shelter.name + ' (' + shelter.location + ')' : 'Local Shelter'}">Happy Paws Shelter</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Applicant Summary Box -->
+                                <div class="review-box mb-4">
+                                    <h6 class="fw-bold text-purple mb-3">👤 Applicant Information</h6>
+                                    <div class="row g-3">
+                                        <div class="col-sm-4">
+                                            <div class="review-label">Full Name</div>
+                                            <div class="review-value" id="revFullName">-</div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="review-label">Email</div>
+                                            <div class="review-value" id="revEmail">-</div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="review-label">Phone</div>
+                                            <div class="review-value" id="revPhone">-</div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="review-label">City</div>
+                                            <div class="review-value" id="revCity">-</div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="review-label">Occupation</div>
+                                            <div class="review-value" id="revOccupation">-</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Home Environment Box -->
+                                <div class="review-box mb-4">
+                                    <h6 class="fw-bold text-purple mb-3">🏡 Home Environment & Experience</h6>
+                                    <div class="row g-3">
+                                        <div class="col-sm-4">
+                                            <div class="review-label">Current Pets</div>
+                                            <div class="review-value" id="revCurrentPets">-</div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="review-label">Prior Pet Experience</div>
+                                            <div class="review-value" id="revExperience">-</div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="review-label">Home Type</div>
+                                            <div class="review-value" id="revHomeType">-</div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="review-label">Permission for Pets</div>
+                                            <div class="review-value" id="revPermission">-</div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="review-label">Hours Alone Daily</div>
+                                            <div class="review-value" id="revHoursAlone">-</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Adoption Motivation Box -->
+                                <div class="review-box mb-4">
+                                    <h6 class="fw-bold text-purple mb-3">❤️ Adoption Motivation</h6>
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <div class="review-label">Reason for Adoption</div>
+                                            <div class="review-value" id="revReason">-</div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="review-label">Primary Caretaker</div>
+                                            <div class="review-value" id="revCaretaker">-</div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="review-label">Prepared for Expenses</div>
+                                            <div class="review-value" id="revExpenses">-</div>
+                                        </div>
+                                        <div class="col-12" id="revAdditionalInfoContainer">
+                                            <div class="review-label">Additional Notes</div>
+                                            <div class="review-value" id="revAdditionalInfo">-</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Adoption Readiness Box -->
+                                <div class="review-box mb-4">
+                                    <h6 class="fw-bold text-purple mb-3">📋 Adoption Readiness Responses</h6>
+                                    <div class="row g-3">
+                                        <div class="col-sm-6">
+                                            <div class="review-label">1. Long-term responsibility (10–15 years)</div>
+                                            <div class="review-value">
+                                                <span class="badge" th:classappend="${form.readinessQ1 == 'Yes' ? 'bg-success' : 'bg-warning text-dark'}" th:text="${form.readinessQ1}">Yes</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="review-label">2. Daily time commitment</div>
+                                            <div class="review-value">
+                                                <span class="badge" th:classappend="${form.readinessQ2 == 'Yes' ? 'bg-success' : 'bg-warning text-dark'}" th:text="${form.readinessQ2}">Yes</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="review-label">3. Financial preparation</div>
+                                            <div class="review-value">
+                                                <span class="badge" th:classappend="${form.readinessQ3 == 'Yes' ? 'bg-success' : 'bg-warning text-dark'}" th:text="${form.readinessQ3}">Yes</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="review-label">4. Pet-friendly living</div>
+                                            <div class="review-value">
+                                                <span class="badge" th:classappend="${form.readinessQ4 == 'Yes' ? 'bg-success' : 'bg-warning text-dark'}" th:text="${form.readinessQ4}">Yes</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Disclaimer notice -->
+                                <div class="alert alert-info border-0 rounded-4 p-3 mb-4 d-flex align-items-center gap-3">
+                                    <span class="fs-4">ℹ️</span>
+                                    <small class="mb-0">By clicking <strong>Submit Application</strong>, your application is officially saved to MySQL with status <strong>PENDING</strong>. The shelter owner and admin will review your details, schedule a visit, and coordinate handover.</small>
+                                </div>
+
+                                <!-- Submission Buttons -->
+                                <div class="d-flex justify-content-between pt-2">
+                                    <button type="button" class="btn btn-light px-4 py-3 rounded-pill fw-bold" onclick="goToStep(3)">
+                                        &larr; Back to Questions
+                                    </button>
+                                    <button type="submit" class="btn btn-purple px-5 py-3 rounded-pill fw-bold fs-5 shadow-sm">
+                                        ✓ Submit Application
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="footer py-4 text-center mt-auto border-top bg-white">
+                <div class="container">
+                    <p class="mb-0 text-muted">&copy; 2026 PetConnect. All rights reserved. Connect. Care. Adopt.</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function goToStep(stepNumber) {
+            // Validate step 1 if moving forward
+            if (stepNumber === 2) {
+                var name = document.getElementById('inputFullName').value.trim();
+                var email = document.getElementById('inputEmail').value.trim();
+                var phone = document.getElementById('inputPhone').value.trim();
+                var city = document.getElementById('inputCity').value.trim();
+                if (!name || !email || !phone || !city) {
+                    alert("Please fill in your Name, Email, Phone, and City before proceeding.");
+                    return;
+                }
+            }
+
+            // Validate step 3 if moving forward
+            if (stepNumber === 4) {
+                var reason = document.getElementById('inputAdoptionReason').value.trim();
+                var caretaker = document.getElementById('inputPrimaryCaretaker').value.trim();
+                var terms = document.getElementById('termsAccepted').checked;
+                if (!reason || !caretaker) {
+                    alert("Please provide the reason for adoption and the primary caretaker.");
+                    return;
+                }
+                if (!terms) {
+                    alert("Please accept the terms confirmation checkbox.");
+                    return;
+                }
+            }
+
+            // Hide all steps
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById('step-' + i).classList.add('d-none');
+                var pill = document.getElementById('pill-' + i);
+                pill.classList.remove('active', 'completed');
+                if (i < stepNumber) {
+                    pill.classList.add('completed');
+                } else if (i === stepNumber) {
+                    pill.classList.add('active');
+                }
+            }
+
+            // Show selected step
+            document.getElementById('step-' + stepNumber).classList.remove('d-none');
+            document.getElementById('stepCounter').textContent = 'Step ' + stepNumber + ' of 4';
+            document.getElementById('wizardProgressBar').style.width = (stepNumber * 25) + '%';
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function populateReview() {
+            document.getElementById('revFullName').textContent = document.getElementById('inputFullName').value || '-';
+            document.getElementById('revEmail').textContent = document.getElementById('inputEmail').value || '-';
+            document.getElementById('revPhone').textContent = document.getElementById('inputPhone').value || '-';
+            document.getElementById('revCity').textContent = document.getElementById('inputCity').value || '-';
+            document.getElementById('revOccupation').textContent = document.getElementById('inputOccupation').value || 'Not specified';
+
+            document.getElementById('revCurrentPets').textContent = document.getElementById('inputCurrentPets').value;
+            document.getElementById('revExperience').textContent = document.getElementById('inputPetExperience').value;
+            document.getElementById('revHomeType').textContent = document.getElementById('inputHomeType').value;
+            document.getElementById('revPermission').textContent = document.getElementById('inputPetPermission').value;
+            document.getElementById('revHoursAlone').textContent = document.getElementById('inputHoursAlone').value;
+
+            document.getElementById('revReason').textContent = document.getElementById('inputAdoptionReason').value || '-';
+            document.getElementById('revCaretaker').textContent = document.getElementById('inputPrimaryCaretaker').value || '-';
+            document.getElementById('revExpenses').textContent = document.getElementById('inputExpenses').value;
+            var addInfo = document.getElementById('inputAdditionalInfo').value;
+            document.getElementById('revAdditionalInfo').textContent = addInfo ? addInfo : 'None provided';
+        }
+    </script>
+</body>
+</html>

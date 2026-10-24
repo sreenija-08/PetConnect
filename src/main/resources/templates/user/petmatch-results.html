@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PetMatch AI Recommendations - PetConnect</title>
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts (Outfit) -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .match-card {
+            border: 1px solid #E5E7EB;
+            border-radius: 18px;
+            background: #FFFFFF;
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .match-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08) !important;
+        }
+        .match-card-img {
+            width: 100%;
+            height: 240px;
+            object-fit: cover;
+        }
+        .score-pill-high {
+            background: #ECFDF5;
+            color: #065F46;
+            border: 1px solid #A7F3D0;
+        }
+        .score-pill-potential {
+            background: #F5F3FF;
+            color: #5C3BEB;
+            border: 1px solid #DDD6FE;
+        }
+        .score-pill-lower {
+            background: #F3F4F6;
+            color: #4B5563;
+            border: 1px solid #E5E7EB;
+        }
+        .reason-list {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 0;
+        }
+        .reason-list li {
+            position: relative;
+            padding-left: 22px;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+            line-height: 1.35;
+        }
+        .reason-list li:last-child {
+            margin-bottom: 0;
+        }
+        .reason-list li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            top: 0;
+            color: #10B981;
+            font-weight: bold;
+        }
+        .concern-list {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 0;
+        }
+        .concern-list li {
+            position: relative;
+            padding-left: 22px;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+            line-height: 1.35;
+            color: #B45309;
+        }
+        .concern-list li::before {
+            content: "⚠️";
+            position: absolute;
+            left: 0;
+            top: -1px;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar('user', 'petmatch')}"></div>
+
+        <div class="content-wrapper">
+            <!-- Header -->
+            <div th:replace="~{fragments/header :: header(${loggedInUser != null ? loggedInUser.fullName : 'Adopter'}, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200')}"></div>
+
+            <main class="main-content">
+                <div class="container-fluid" style="max-width: 1100px;">
+
+                    <!-- Header & Actions -->
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="fs-4">✨</span>
+                                <h1 class="fw-bold mb-0">PetMatch AI Recommendations</h1>
+                            </div>
+                            <p class="text-muted mb-0">
+                                Recommended matches ranked by lifestyle and home compatibility. You always make the final adoption decision.
+                            </p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a th:href="@{/user/petmatch}" class="btn btn-outline-purple rounded-pill px-4 py-2 fw-semibold">
+                                ⚙️ Modify Preferences
+                            </a>
+                            <a th:href="@{/browse-pets}" class="btn btn-light border rounded-pill px-4 py-2 fw-semibold">
+                                Browse All Pets
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Preferences Summary Bar -->
+                    <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                <span class="text-muted small fw-bold text-uppercase">Your Criteria:</span>
+                                <span class="badge bg-purple-subtle text-purple border rounded-pill px-3 py-1">
+                                    🐾 Type: <strong th:text="${preferences.preferredPetType}">Any</strong>
+                                </span>
+                                <span class="badge bg-purple-subtle text-purple border rounded-pill px-3 py-1">
+                                    ⚡ Energy: <strong th:text="${preferences.activityLevel}">Medium</strong>
+                                </span>
+                                <span class="badge bg-purple-subtle text-purple border rounded-pill px-3 py-1">
+                                    🏠 Home: <strong th:text="${preferences.homeType}">House</strong>
+                                </span>
+                                <span class="badge bg-purple-subtle text-purple border rounded-pill px-3 py-1">
+                                    🌱 Experience: <strong th:text="${preferences.experienceLevel}">First-time</strong>
+                                </span>
+                                <span class="badge bg-purple-subtle text-purple border rounded-pill px-3 py-1">
+                                    📏 Size: <strong th:text="${preferences.preferredSize}">Any</strong>
+                                </span>
+                                <span class="badge bg-purple-subtle text-purple border rounded-pill px-3 py-1" th:if="${preferences.hasChildren}">
+                                    👶 Children at Home
+                                </span>
+                            </div>
+                            <div>
+                                <small class="text-muted">
+                                    Found <strong th:text="${totalMatches}">8</strong> available pets (<strong class="text-success" th:text="${highMatchCount}">4</strong> high compatibility)
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Low Match Alert when few/no strong matches -->
+                    <div th:if="${highMatchCount == 0 and totalMatches > 0}" class="alert alert-warning border-0 rounded-4 p-3 mb-4 shadow-sm">
+                        <strong>ℹ️ Few pets currently match your exact preferences.</strong>
+                        <p class="small mb-0 mt-1">Here are the closest available matches from verified shelters. You can also adjust your preferences to see more matches.</p>
+                    </div>
+
+                    <!-- Empty State: No matches found -->
+                    <div th:if="${#lists.isEmpty(recommendations)}" class="card border-0 shadow-sm p-5 text-center rounded-card my-4">
+                        <div class="py-4">
+                            <div style="font-size: 3.5rem; margin-bottom: 1rem;">🔍</div>
+                            <h3 class="fw-bold text-dark mb-2">No strong matches found.</h3>
+                            <p class="text-muted mb-4" style="max-width: 500px; margin: 0 auto;">
+                                There are currently no approved pets matching your specific criteria. Try adjusting your preferences to explore more pets!
+                            </p>
+                            <a th:href="@{/user/petmatch}" class="btn btn-purple px-5 py-3 rounded-pill fw-bold fs-6 shadow-sm">
+                                ⚙️ Modify Preferences
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Recommendations Grid -->
+                    <div class="row g-4" th:if="${not #lists.isEmpty(recommendations)}">
+                        <div class="col-md-6 col-lg-4" th:each="item : ${recommendations}">
+                            <div class="match-card shadow-sm h-100 d-flex flex-column">
+
+                                <!-- Pet Photo & Compatibility Badge Overlay -->
+                                <div class="position-relative">
+                                    <img th:src="${item.pet.displayPhoto}" 
+                                         onerror="this.src='https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=800'"
+                                         class="match-card-img" 
+                                         th:alt="${item.pet.name}">
+                                    
+                                    <!-- Compatibility Score Badge Overlay -->
+                                    <div class="position-absolute top-0 end-0 m-3">
+                                        <span class="badge py-2 px-3 rounded-pill fw-bold shadow-sm"
+                                              th:classappend="${item.badgeCssClass}">
+                                            <span th:text="${item.compatibilityScore + '% Compatibility'}">92% Compatibility</span>
+                                        </span>
+                                    </div>
+
+                                    <!-- Pet Type Pill Overlay -->
+                                    <div class="position-absolute top-0 start-0 m-3">
+                                        <span class="badge bg-dark bg-opacity-75 text-white rounded-pill px-3 py-1 small">
+                                            <span th:text="${item.pet.type}">DOG</span>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Card Body -->
+                                <div class="p-4 d-flex flex-column flex-grow-1">
+                                    
+                                    <!-- Pet Basic Details -->
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <h4 class="fw-bold text-dark mb-0" th:text="${item.pet.name}">Bruno</h4>
+                                            <div class="text-purple fw-semibold small" th:text="${item.pet.breed}">Labrador</div>
+                                        </div>
+                                        <span class="badge bg-light text-dark border rounded-pill px-2 py-1 small"
+                                              th:text="${item.compatibilityBadge}">
+                                            High Compatibility
+                                        </span>
+                                    </div>
+
+                                    <div class="text-muted small mb-3">
+                                        <span th:text="${item.pet.age + ' yrs'}">2 yrs</span> • 
+                                        <span th:text="${item.pet.gender}">Male</span> • 
+                                        <span th:text="${item.pet.size != null ? item.pet.size : 'Medium'}">Medium</span>
+                                    </div>
+
+                                    <!-- Shelter & Location -->
+                                    <div class="p-2 bg-light rounded-3 mb-3 small">
+                                        <div class="text-truncate">
+                                            <span class="text-muted">🏠 Shelter:</span>
+                                            <strong class="text-dark" th:text="${item.pet.shelter != null ? item.pet.shelter.name : 'Happy Paws Shelter'}">Happy Paws Shelter</strong>
+                                        </div>
+                                        <div class="text-truncate" th:if="${item.pet.shelter != null and item.pet.shelter.location != null}">
+                                            <span class="text-muted">📍 Location:</span>
+                                            <span class="text-dark" th:text="${item.pet.shelter.location}">Chennai, Tamil Nadu</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Why This May Match Section -->
+                                    <div class="mb-3">
+                                        <h6 class="fw-bold text-dark small mb-2">Why this may match:</h6>
+                                        <ul class="reason-list" th:if="${not #lists.isEmpty(item.matchReasons)}">
+                                            <li th:each="reason : ${item.matchReasons}" th:text="${reason}">
+                                                Matches your preferred pet type
+                                            </li>
+                                        </ul>
+                                        <!-- Concerns / Considerations if any -->
+                                        <ul class="concern-list mt-2" th:if="${not #lists.isEmpty(item.concernNotes)}">
+                                            <li th:each="concern : ${item.concernNotes}" th:text="${concern}">
+                                                Notice note
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    <!-- Card Action Buttons (Bottom) -->
+                                    <div class="mt-auto pt-3 border-top">
+                                        <div class="d-flex flex-column gap-2">
+                                            <div class="d-flex gap-2">
+                                                <a th:href="@{/pet-details/{id}(id=${item.pet.id})}" 
+                                                   class="btn btn-outline-purple rounded-pill flex-fill py-2 fw-semibold text-nowrap">
+                                                    👁️ View Pet
+                                                </a>
+                                                <button type="button" 
+                                                        class="btn btn-outline-danger rounded-pill px-3 py-2 fw-semibold text-nowrap favorite-btn"
+                                                        th:classappend="${item.favorite ? 'btn-danger text-white' : ''}"
+                                                        th:data-pet-id="${item.pet.id}"
+                                                        onclick="togglePetFavorite(this)">
+                                                    <span class="fav-icon" th:text="${item.favorite ? '❤️' : '🤍'}">🤍</span>
+                                                    <span class="fav-text" th:text="${item.favorite ? 'Favorited' : 'Favorite'}">Favorite</span>
+                                                </button>
+                                            </div>
+                                            <a th:href="@{/pet/{id}/adopt/readiness(id=${item.pet.id})}" 
+                                               class="btn btn-purple rounded-pill w-100 py-2 fw-bold shadow-sm">
+                                                🐾 Apply for Adoption
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="footer py-4 text-center mt-auto border-top bg-white">
+                <div class="container">
+                    <p class="mb-0 text-muted">&copy; 2026 PetConnect. All rights reserved. Connect. Care. Adopt.</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- AJAX Favorite Handler -->
+    <script>
+        function togglePetFavorite(btn) {
+            const petId = btn.getAttribute('data-pet-id');
+            if (!petId) return;
+
+            btn.disabled = true;
+            fetch('/user/favorites/toggle/' + petId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                if (data.success) {
+                    const icon = btn.querySelector('.fav-icon');
+                    const text = btn.querySelector('.fav-text');
+                    if (data.isFavorite) {
+                        btn.classList.add('btn-danger', 'text-white');
+                        btn.classList.remove('btn-outline-danger');
+                        if (icon) icon.textContent = '❤️';
+                        if (text) text.textContent = 'Favorited';
+                    } else {
+                        btn.classList.remove('btn-danger', 'text-white');
+                        btn.classList.add('btn-outline-danger');
+                        if (icon) icon.textContent = '🤍';
+                        if (text) text.textContent = 'Favorite';
+                    }
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                console.error('Error toggling favorite:', err);
+            });
+        }
+    </script>
+</body>
+</html>

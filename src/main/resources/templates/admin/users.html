@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users Management - Admin - PetConnect</title>
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts (Outfit) -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        .layout-wrapper {
+            display: flex;
+            width: 100%;
+            max-width: 100%;
+            min-height: 100vh;
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+
+        .sidebar {
+            flex-shrink: 0;
+            min-width: 260px;
+            max-width: 260px;
+            width: 260px;
+            box-sizing: border-box;
+        }
+
+        .content-wrapper {
+            flex: 1 1 0%;
+            min-width: 0;
+            max-width: calc(100% - 260px);
+            width: calc(100% - 260px);
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+
+        .main-content {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow-x: hidden;
+            padding: 32px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 16px;
+            }
+        }
+
+        /* Responsive Summary Cards Grid */
+        .users-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 1200px) {
+            .users-stat-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 700px) {
+            .users-stat-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .users-stat-grid .stat-widget {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            margin: 0;
+            min-width: 0;
+        }
+
+        .stat-widget-details {
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .stat-widget-details p {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Responsive Search and Filter Bar */
+        .search-filter-card {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 24px;
+        }
+
+        .search-container {
+            display: grid;
+            grid-template-columns: minmax(220px, 1fr) auto auto auto;
+            gap: 16px;
+            align-items: center;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        .search-input-group {
+            min-width: 0;
+            width: 100%;
+        }
+
+        .search-input-group .input-group {
+            width: 100%;
+        }
+
+        .search-input-group input {
+            min-width: 0;
+            width: 100%;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .filter-group select {
+            min-width: 130px;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: flex-end;
+            min-width: 0;
+        }
+
+        @media (max-width: 1000px) {
+            .search-container {
+                grid-template-columns: 1fr 1fr;
+            }
+            .filter-buttons {
+                justify-content: flex-start;
+            }
+        }
+
+        @media (max-width: 650px) {
+            .search-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Responsive Table Container Card */
+        .users-table-card {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+            background: var(--white);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+
+        @media (max-width: 768px) {
+            .users-table-card {
+                padding: 16px;
+            }
+        }
+
+        .table-wrapper {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            box-sizing: border-box;
+        }
+
+        .custom-table {
+            width: 100%;
+            min-width: 1080px;
+            table-layout: fixed;
+            border-collapse: collapse;
+            margin: 0;
+        }
+
+        .custom-table th {
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 14px 10px;
+            border-bottom: 2px solid var(--bg-light);
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .custom-table td {
+            padding: 14px 10px;
+            border-bottom: 1px solid var(--bg-light);
+            vertical-align: middle;
+            font-size: 0.9rem;
+        }
+
+        .custom-table tbody tr:hover {
+            background-color: #fbfaff;
+        }
+
+        /* Column Specific Alignments & Widths */
+        .col-user-id {
+            width: 70px;
+            text-align: center;
+        }
+        .col-user-name {
+            width: 180px;
+            text-align: left;
+        }
+        .col-user-email {
+            width: 200px;
+            text-align: left;
+        }
+        .col-user-phone {
+            width: 125px;
+            text-align: left;
+        }
+        .col-user-role {
+            width: 120px;
+            text-align: center;
+        }
+        .col-user-date {
+            width: 125px;
+            text-align: center;
+        }
+        .col-user-status {
+            width: 110px;
+            text-align: center;
+        }
+        .col-user-actions {
+            width: 250px;
+            text-align: center;
+        }
+
+        /* Name Cell Layout */
+        .cell-name-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .cell-name-box .name-details {
+            min-width: 0;
+            flex: 1 1 auto;
+        }
+
+        .cell-name-box .name-link {
+            font-weight: 700;
+            color: var(--text-dark);
+            text-decoration: none;
+            display: block;
+            line-height: 1.25;
+            word-break: break-word;
+            white-space: normal;
+            transition: var(--transition);
+        }
+
+        .cell-name-box .name-link:hover {
+            color: var(--primary);
+        }
+
+        /* Text Wrapping Constraints */
+        .cell-email-text {
+            color: var(--text-dark);
+            display: block;
+            word-break: break-word;
+            white-space: normal;
+            line-height: 1.25;
+        }
+
+        .cell-phone-text {
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .cell-date-text {
+            color: var(--text-muted);
+            white-space: nowrap;
+            font-size: 0.85rem;
+        }
+
+        /* Actions Column Group */
+        .action-buttons-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: nowrap;
+            width: 100%;
+        }
+
+        .action-buttons-group .btn,
+        .action-buttons-group .action-btn {
+            white-space: nowrap;
+            font-size: 0.8rem;
+            padding: 5px 12px;
+            line-height: 1.3;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            text-decoration: none;
+        }
+
+        @media (max-width: 992px) {
+            .action-buttons-group {
+                gap: 6px;
+            }
+            .action-buttons-group .btn,
+            .action-buttons-group .action-btn {
+                padding: 4px 8px;
+                font-size: 0.75rem;
+            }
+        }
+
+        /* Role Badges */
+        .role-badge-admin {
+            background-color: #5C3BEB;
+            color: #ffffff;
+        }
+        .role-badge-shelter {
+            background-color: #EBF3FE;
+            color: #2563EB;
+            border: 1px solid #BFDBFE;
+        }
+        .role-badge-user {
+            background-color: #F3F4F6;
+            color: #4B5563;
+            border: 1px solid #E5E7EB;
+        }
+        .status-badge-active {
+            background-color: #D1FAE5;
+            color: #065F46;
+            border: 1px solid #A7F3D0;
+        }
+        .status-badge-inactive {
+            background-color: #FEE2E2;
+            color: #991B1B;
+            border: 1px solid #FECACA;
+        }
+        .avatar-initial {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ECE7FF, #DBEAFE);
+            color: #5C3BEB;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar('admin', 'users')}"></div>
+
+        <div class="content-wrapper">
+            <!-- Header -->
+            <div th:replace="~{fragments/header :: header('Platform Administrator', 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200')}"></div>
+
+            <main class="main-content">
+                <!-- Flash Messages -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show border-0 rounded-4 p-3 mb-4 shadow-sm" role="alert">
+                    <span class="me-2">✓</span>
+                    <span th:text="${successMessage}">Success message</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show border-0 rounded-4 p-3 mb-4 shadow-sm" role="alert">
+                    <span class="me-2">✕</span>
+                    <span th:text="${errorMessage}">Error message</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <!-- Page Header -->
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+                    <div>
+                        <h1 class="fw-bold mb-1">Users Management</h1>
+                        <p class="text-muted mb-0">Monitor registered accounts, inspect platform activities, and manage user access control.</p>
+                    </div>
+                </div>
+
+                <!-- Summary Stat Widgets: Responsive Grid -->
+                <div class="users-stat-grid">
+                    <div class="stat-widget purple">
+                        <div class="stat-widget-details">
+                            <h3 th:text="${totalUsersCount}">0</h3>
+                            <p>Total Registered Users</p>
+                        </div>
+                        <div class="stat-widget-icon">👥</div>
+                    </div>
+                    <div class="stat-widget green">
+                        <div class="stat-widget-details">
+                            <h3 th:text="${activeUsersCount}">0</h3>
+                            <p>Active Accounts</p>
+                        </div>
+                        <div class="stat-widget-icon">✅</div>
+                    </div>
+                    <div class="stat-widget orange">
+                        <div class="stat-widget-details">
+                            <h3 th:text="${inactiveUsersCount}">0</h3>
+                            <p>Inactive Accounts</p>
+                        </div>
+                        <div class="stat-widget-icon">⏸️</div>
+                    </div>
+                    <div class="stat-widget blue">
+                        <div class="stat-widget-details">
+                            <h3 th:text="${shelterOwnerCount}">0</h3>
+                            <p>Shelter Owners</p>
+                        </div>
+                        <div class="stat-widget-icon">🏡</div>
+                    </div>
+                </div>
+
+                <!-- Filters & Search Bar Card: Responsive Grid -->
+                <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 search-filter-card">
+                    <form th:action="@{/admin/users}" method="GET" class="search-container">
+                        <!-- Search Box -->
+                        <div class="search-input-group">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0 ps-3">🔍</span>
+                                <input type="text" name="search" class="form-control border-0 bg-light py-2" 
+                                       placeholder="Search by name, email, or phone..." th:value="${searchQuery}">
+                            </div>
+                        </div>
+
+                        <!-- Role Filter -->
+                        <div class="filter-group">
+                            <label class="small fw-semibold text-muted text-nowrap mb-0">Role:</label>
+                            <select name="role" class="form-select border-0 bg-light py-2">
+                                <option value="ALL" th:selected="${selectedRole == 'ALL'}">All Roles</option>
+                                <option value="USER" th:selected="${selectedRole == 'USER'}">Regular Users</option>
+                                <option value="SHELTER_OWNER" th:selected="${selectedRole == 'SHELTER_OWNER'}">Shelter Owners</option>
+                                <option value="ADMIN" th:selected="${selectedRole == 'ADMIN'}">Administrators</option>
+                            </select>
+                        </div>
+
+                        <!-- Status Filter -->
+                        <div class="filter-group">
+                            <label class="small fw-semibold text-muted text-nowrap mb-0">Status:</label>
+                            <select name="status" class="form-select border-0 bg-light py-2">
+                                <option value="ALL" th:selected="${selectedStatus == 'ALL'}">All Statuses</option>
+                                <option value="ACTIVE" th:selected="${selectedStatus == 'ACTIVE'}">Active</option>
+                                <option value="INACTIVE" th:selected="${selectedStatus == 'INACTIVE'}">Inactive</option>
+                            </select>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="filter-buttons">
+                            <button type="submit" class="btn btn-purple rounded-pill px-4 py-2">Filter</button>
+                            <a th:if="${(searchQuery != null and !searchQuery.isEmpty()) or selectedRole != 'ALL' or selectedStatus != 'ALL'}"
+                               th:href="@{/admin/users}" 
+                               class="btn btn-light rounded-pill px-3 py-2 text-decoration-none" title="Reset Filters">✕</a>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Users Table Card: Responsive Scroll Wrapper -->
+                <div class="users-table-card">
+                    <div class="table-wrapper">
+                        <table class="custom-table align-middle">
+                            <colgroup>
+                                <col class="col-user-id" style="width: 70px;">
+                                <col class="col-user-name" style="width: 180px;">
+                                <col class="col-user-email" style="width: 200px;">
+                                <col class="col-user-phone" style="width: 125px;">
+                                <col class="col-user-role" style="width: 120px;">
+                                <col class="col-user-date" style="width: 125px;">
+                                <col class="col-user-status" style="width: 110px;">
+                                <col class="col-user-actions" style="width: 250px;">
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th class="col-user-id">User ID</th>
+                                    <th class="col-user-name">Full Name</th>
+                                    <th class="col-user-email">Email</th>
+                                    <th class="col-user-phone">Phone</th>
+                                    <th class="col-user-role">Role</th>
+                                    <th class="col-user-date">Registration Date</th>
+                                    <th class="col-user-status">Account Status</th>
+                                    <th class="col-user-actions">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Loop through real MySQL users -->
+                                <tr th:each="u : ${users}">
+                                    <td class="col-user-id">
+                                        <span class="fw-bold text-dark" th:text="'#' + ${u.id}">#1</span>
+                                    </td>
+                                    <td class="col-user-name">
+                                        <div class="cell-name-box">
+                                            <div class="avatar-initial" th:text="${#strings.substring(u.fullName, 0, 1)}">U</div>
+                                            <div class="name-details">
+                                                <a th:href="@{/admin/users/{id}(id=${u.id})}" 
+                                                   class="name-link hover-purple" 
+                                                   th:text="${u.fullName}">User Name</a>
+                                                <small class="text-muted d-block text-truncate" th:if="${u.city != null}" th:text="${u.city}">City</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="col-user-email">
+                                        <span class="cell-email-text" th:text="${u.email}">user@example.com</span>
+                                    </td>
+                                    <td class="col-user-phone">
+                                        <span class="cell-phone-text" th:text="${u.phone != null and !u.phone.isEmpty() ? u.phone : '-'}">+91 9876543210</span>
+                                    </td>
+                                    <td class="col-user-role">
+                                        <span class="badge rounded-pill px-3 py-1 small fw-semibold text-nowrap"
+                                              th:classappend="${u.primaryRoleName == 'ADMIN' ? 'role-badge-admin' : (u.primaryRoleName == 'SHELTER_OWNER' ? 'role-badge-shelter' : 'role-badge-user')}"
+                                              th:text="${u.primaryRoleName == 'ADMIN' ? 'Admin' : (u.primaryRoleName == 'SHELTER_OWNER' ? 'Shelter Owner' : 'User')}">User</span>
+                                    </td>
+                                    <td class="col-user-date">
+                                        <span class="cell-date-text" 
+                                              th:text="${u.createdAt != null ? #temporals.format(u.createdAt, 'dd MMM yyyy') : 'Recently'}">01 Jan 2026</span>
+                                    </td>
+                                    <td class="col-user-status">
+                                        <span class="badge rounded-pill px-3 py-1 small fw-semibold text-nowrap"
+                                              th:classappend="${u.active ? 'status-badge-active' : 'status-badge-inactive'}"
+                                              th:text="${u.active ? 'ACTIVE' : 'INACTIVE'}">ACTIVE</span>
+                                    </td>
+                                    <td class="col-user-actions">
+                                        <div class="action-buttons-group">
+                                            <!-- View Details -->
+                                            <a th:href="@{/admin/users/{id}(id=${u.id})}" 
+                                               class="btn btn-sm btn-purple rounded-pill action-btn fw-semibold shadow-sm" 
+                                               title="View Details">
+                                                View Details
+                                            </a>
+
+                                            <!-- Deactivate / Activate Button -->
+                                            <!-- If Currently Logged-in Admin: cannot deactivate self -->
+                                            <button th:if="${u.email.equalsIgnoreCase(currentAdminEmail)}" 
+                                                    type="button" 
+                                                    class="btn btn-sm btn-light text-muted rounded-pill action-btn" 
+                                                    disabled 
+                                                    title="You cannot deactivate the currently logged-in Admin account">
+                                                Deactivate
+                                            </button>
+
+                                            <!-- If other Active user: trigger Deactivate modal -->
+                                            <button th:if="${!u.email.equalsIgnoreCase(currentAdminEmail) and u.active}" 
+                                                    type="button" 
+                                                    class="btn btn-sm btn-outline-warning rounded-pill action-btn fw-semibold" 
+                                                    data-bs-toggle="modal" 
+                                                    th:data-bs-target="'#deactivateModal' + ${u.id}" 
+                                                    title="Deactivate this user account">
+                                                Deactivate
+                                            </button>
+
+                                            <!-- If Inactive user: trigger Activate modal -->
+                                            <button th:if="${!u.active}" 
+                                                    type="button" 
+                                                    class="btn btn-sm btn-outline-success rounded-pill action-btn fw-semibold" 
+                                                    data-bs-toggle="modal" 
+                                                    th:data-bs-target="'#activateModal' + ${u.id}" 
+                                                    title="Activate this user account">
+                                                Activate
+                                            </button>
+
+                                            <!-- Delete Button -->
+                                            <!-- If Currently Logged-in Admin: cannot delete self -->
+                                            <button th:if="${u.email.equalsIgnoreCase(currentAdminEmail)}" 
+                                                    type="button" 
+                                                    class="btn btn-sm btn-light text-muted rounded-pill action-btn" 
+                                                    disabled 
+                                                    title="You cannot delete the currently logged-in Admin account">
+                                                Delete
+                                            </button>
+
+                                            <!-- If user has associated records: open explanation modal -->
+                                            <button th:if="${!u.email.equalsIgnoreCase(currentAdminEmail) and userIdsWithRecords.contains(u.id)}" 
+                                                    type="button" 
+                                                    class="btn btn-sm btn-outline-secondary rounded-pill action-btn fw-semibold" 
+                                                    data-bs-toggle="modal" 
+                                                    th:data-bs-target="'#cannotDeleteModal' + ${u.id}" 
+                                                    title="Safe deletion check">
+                                                Delete
+                                            </button>
+
+                                            <!-- If user has NO associated records: open permanent delete modal -->
+                                            <button th:if="${!u.email.equalsIgnoreCase(currentAdminEmail) and !userIdsWithRecords.contains(u.id)}" 
+                                                    type="button" 
+                                                    class="btn btn-sm btn-outline-danger rounded-pill action-btn fw-semibold" 
+                                                    data-bs-toggle="modal" 
+                                                    th:data-bs-target="'#deleteModal' + ${u.id}" 
+                                                    title="Permanently delete user">
+                                                Delete
+                                            </button>
+                                        </div>
+
+                                    <!-- Deactivate Modal -->
+                                    <div th:if="${!u.email.equalsIgnoreCase(currentAdminEmail) and u.active}" 
+                                         class="modal fade" th:id="'deactivateModal' + ${u.id}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content rounded-4 border-0 shadow">
+                                                <form th:action="@{/admin/users/{id}/deactivate(id=${u.id})}" method="POST">
+                                                    <div class="modal-header border-0 pb-0">
+                                                        <h5 class="modal-title fw-bold text-warning">Deactivate User Account</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p class="fs-6 fw-bold text-dark mb-2">Are you sure you want to deactivate this user?</p>
+                                                        <p class="text-muted small mb-3">The user will no longer be able to log in, but all existing records (pets, adoptions, care bookings, and reviews) will be preserved.</p>
+                                                        <div class="bg-light p-3 rounded-3 mb-3 small">
+                                                            <div class="mb-1"><strong>User:</strong> <span th:text="${u.fullName}">Name</span> (<span th:text="${u.email}">Email</span>)</div>
+                                                            <div><strong>Role:</strong> <span th:text="${u.primaryRoleName}">Role</span></div>
+                                                        </div>
+                                                        <div th:if="${u.primaryRoleName == 'SHELTER_OWNER'}" class="alert alert-warning border-0 rounded-3 small mb-0 py-2">
+                                                            ⚠️ <strong>Notice:</strong> Deactivating this shelter owner will also mark their shelter as inactive.
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer border-0 pt-0">
+                                                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                                                        <button type="submit" class="btn btn-warning rounded-pill px-4 fw-semibold text-dark">Confirm Deactivation</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Activate Modal -->
+                                    <div th:if="${!u.active}" 
+                                         class="modal fade" th:id="'activateModal' + ${u.id}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content rounded-4 border-0 shadow">
+                                                <form th:action="@{/admin/users/{id}/activate(id=${u.id})}" method="POST">
+                                                    <div class="modal-header border-0 pb-0">
+                                                        <h5 class="modal-title fw-bold text-success">Activate User Account</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p class="fs-6 fw-bold text-dark mb-2">Are you sure you want to activate this user?</p>
+                                                        <p class="text-muted small mb-3">Login access will be immediately restored for this account.</p>
+                                                        <div class="bg-light p-3 rounded-3 mb-3 small">
+                                                            <div class="mb-1"><strong>User:</strong> <span th:text="${u.fullName}">Name</span> (<span th:text="${u.email}">Email</span>)</div>
+                                                            <div><strong>Role:</strong> <span th:text="${u.primaryRoleName}">Role</span></div>
+                                                        </div>
+                                                        <div th:if="${u.primaryRoleName == 'SHELTER_OWNER'}" class="alert alert-info border-0 rounded-3 small mb-0 py-2">
+                                                            ℹ️ <strong>Notice:</strong> Reactivating this shelter owner will restore their shelter to active status.
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer border-0 pt-0">
+                                                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                                                        <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold">Confirm Activation</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Cannot Delete Modal (records exist) -->
+                                    <div th:if="${!u.email.equalsIgnoreCase(currentAdminEmail) and userIdsWithRecords.contains(u.id)}" 
+                                         class="modal fade" th:id="'cannotDeleteModal' + ${u.id}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content rounded-4 border-0 shadow">
+                                                <div class="modal-header border-0 pb-0">
+                                                    <h5 class="modal-title fw-bold text-warning">Cannot Delete User</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="text-center py-2 mb-2">
+                                                        <span class="fs-1">⚠️</span>
+                                                    </div>
+                                                    <p class="fs-6 fw-bold text-dark text-center mb-2">Associated Records Detected</p>
+                                                    <p class="text-muted small text-center mb-3">
+                                                        This user has associated records (shelters, pets, adoption applications, care bookings, or reviews) and cannot be permanently deleted.
+                                                    </p>
+                                                    <div class="alert alert-light border rounded-3 small mb-0 py-2">
+                                                        💡 <strong>Recommended Action:</strong> You can <strong>deactivate</strong> the user instead. Deactivation disables their login access immediately while preserving all historical data and relationships intact.
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer border-0 pt-0 justify-content-center">
+                                                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+                                                    <form th:if="${u.active}" th:action="@{/admin/users/{id}/deactivate(id=${u.id})}" method="POST" style="display:inline;">
+                                                        <button type="submit" class="btn btn-warning rounded-pill px-4 fw-semibold text-dark">Deactivate User Instead</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Delete Modal (clean user with 0 records) -->
+                                    <div th:if="${!u.email.equalsIgnoreCase(currentAdminEmail) and !userIdsWithRecords.contains(u.id)}" 
+                                         class="modal fade" th:id="'deleteModal' + ${u.id}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content rounded-4 border-0 shadow">
+                                                <form th:action="@{/admin/users/{id}/delete(id=${u.id})}" method="POST">
+                                                    <div class="modal-header border-0 pb-0">
+                                                        <h5 class="modal-title fw-bold text-danger">Delete User Confirmation</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p class="fs-6 fw-bold text-dark mb-2">Are you sure you want to permanently delete this user?</p>
+                                                        <div class="bg-light p-3 rounded-3 mb-3 small">
+                                                            <div class="mb-1"><strong>User Name:</strong> <span th:text="${u.fullName}">Name</span></div>
+                                                            <div class="mb-1"><strong>Email:</strong> <span th:text="${u.email}">Email</span></div>
+                                                            <div><strong>Role:</strong> <span th:text="${u.primaryRoleName}">Role</span></div>
+                                                        </div>
+                                                        <div class="alert alert-danger border-0 rounded-3 small mb-0 py-2">
+                                                            ⚠️ <strong>Warning:</strong> This account has no linked records and will be permanently removed. This action cannot be undone.
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer border-0 pt-0">
+                                                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                                                        <button type="submit" class="btn btn-danger rounded-pill px-4 fw-semibold">Delete Permanently</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <!-- Empty State -->
+                            <tr th:if="${#lists.isEmpty(users)}">
+                                <td colspan="8" class="text-center py-5">
+                                    <span class="fs-1">🔍</span>
+                                    <h6 class="fw-bold text-muted mt-2">No users match your search or filters.</h6>
+                                    <p class="text-muted small mb-3">Try adjusting your keyword, role filter, or status filter.</p>
+                                    <a th:href="@{/admin/users}" class="btn btn-sm btn-outline-purple rounded-pill px-3 py-1">Reset Filters</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="footer py-4 text-center mt-auto border-top bg-white">
+                <div class="container">
+                    <p class="mb-0 text-muted">&copy; 2026 PetConnect. All rights reserved. Connect. Care. Adopt.</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

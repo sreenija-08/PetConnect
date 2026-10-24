@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shelter Verification Details - Admin - PetConnect</title>
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts (Outfit) -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar('admin', 'shelters')}"></div>
+
+        <div class="content-wrapper">
+            <!-- Header -->
+            <div th:replace="~{fragments/header :: header('Platform Administrator', 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200')}"></div>
+
+            <main class="main-content">
+                <!-- Breadcrumbs & Navigation -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}" class="text-decoration-none text-purple">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a th:href="@{/admin/shelter-verification}" class="text-decoration-none text-purple">Shelter Verification</a></li>
+                            <li class="breadcrumb-item active" aria-current="page" th:text="${shelter.name}">Shelter Details</li>
+                        </ol>
+                    </nav>
+                    <a th:href="@{/admin/shelter-verification}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                        ← Back to Shelters List
+                    </a>
+                </div>
+
+                <!-- Flash Messages -->
+                <div th:if="${successMessage}" class="alert alert-success border-0 rounded-4 p-3 mb-4 shadow-sm">
+                    <span th:text="${successMessage}">Success!</span>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger border-0 rounded-4 p-3 mb-4 shadow-sm">
+                    <span th:text="${errorMessage}">Error!</span>
+                </div>
+
+                <!-- Top Overview Banner -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-light rounded-circle p-3 fs-1">🏡</div>
+                            <div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <h2 class="fw-bold mb-0 text-dark" th:text="${shelter.name}">Happy Paws Shelter</h2>
+                                    <span class="badge py-2 px-3 rounded-pill"
+                                          th:classappend="${shelter.verificationStatus == 'APPROVED' ? 'bg-success text-white' : (shelter.verificationStatus == 'AUTO_REJECTED' or shelter.verificationStatus == 'REJECTED' ? 'bg-danger text-white' : (shelter.verificationStatus == 'MANUAL_REVIEW' ? 'bg-warning text-dark' : 'bg-secondary text-white'))}"
+                                          th:text="${shelter.verificationStatus}">PENDING</span>
+                                </div>
+                                <p class="text-muted mb-0 mt-1">
+                                    Shelter ID: <span class="fw-semibold text-dark" th:text="'#' + ${shelter.id}">#1</span> &nbsp;|&nbsp; 
+                                    Submitted on: <span class="fw-semibold text-dark" th:text="${shelter.createdAt != null ? #temporals.format(shelter.createdAt, 'dd MMM yyyy, hh:mm a') : 'Registered'}">01 Jan 2026</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Top Header Action Buttons / Status Indicators -->
+                        <div class="d-flex align-items-center gap-2">
+                            <!-- IF DEMO MODE: Approval is disabled -->
+                            <div th:if="${shelter.isDemoMode() or shelter.verificationMode == 'DEMO'}" class="d-flex align-items-center gap-2">
+                                <span class="badge bg-warning text-dark border border-warning py-2 px-3 rounded-pill fw-bold fs-6">
+                                    🧪 DEMO / TEST RECORD
+                                </span>
+                                <span class="badge bg-secondary-subtle text-muted border py-2 px-3 rounded-pill fw-semibold">
+                                    Approval Disabled for Demo Record
+                                </span>
+                                <a th:href="@{/admin/shelter-verification(status='DEMO')}" class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-semibold">
+                                    Back to Demo Records
+                                </a>
+                            </div>
+
+                            <!-- IF PENDING or MANUAL_REVIEW (and not auto-rejected and NOT demo): Show Approve + Reject buttons -->
+                            <div th:if="${!shelter.isDemoMode() and shelter.verificationMode != 'DEMO' and (shelter.verificationStatus == 'PENDING' or shelter.verificationStatus == 'MANUAL_REVIEW') and shelter.autoRejected != true}" class="d-flex gap-2">
+                                <button type="button" class="btn btn-success rounded-pill px-4 py-2 fw-semibold shadow-sm"
+                                        data-bs-toggle="modal" data-bs-target="#approveModal">
+                                    ✓ Approve Shelter
+                                </button>
+                                <button type="button" class="btn btn-outline-danger rounded-pill px-4 py-2 fw-semibold shadow-sm"
+                                        data-bs-toggle="modal" data-bs-target="#rejectModal">
+                                    ✕ Reject Shelter
+                                </button>
+                            </div>
+
+                            <!-- IF AUTO_REJECTED (and NOT demo): Direct approve blocked! -->
+                            <div th:if="${!shelter.isDemoMode() and shelter.verificationMode != 'DEMO' and (shelter.verificationStatus == 'AUTO_REJECTED' or shelter.autoRejected == true)}" class="d-flex align-items-center gap-2">
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle py-2 px-3 rounded-pill fw-semibold fs-6">
+                                    🤖 Auto-Rejected by AI
+                                </span>
+                                <button type="button" class="btn btn-outline-danger rounded-pill px-3 py-2 fw-semibold shadow-sm"
+                                        data-bs-toggle="modal" data-bs-target="#rejectModal" title="Add Rejection Notes">
+                                    ✕ Add Reject Note
+                                </button>
+                                <a th:href="@{/admin/shelter-verification}" class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-semibold">
+                                    Back to Shelters List
+                                </a>
+                            </div>
+
+                            <!-- IF APPROVED (and NOT demo): DO NOT show Approve Shelter. Show Verified message and Back button -->
+                            <div th:if="${!shelter.isDemoMode() and shelter.verificationMode != 'DEMO' and shelter.verificationStatus == 'APPROVED'}" class="d-flex align-items-center gap-2">
+                                <span class="badge bg-success-subtle text-success border border-success-subtle py-2 px-3 rounded-pill fw-semibold fs-6">
+                                    ✓ Shelter Verified &amp; Approved
+                                </span>
+                                <a th:href="@{/admin/shelter-verification}" class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-semibold">
+                                    Back to Shelters List
+                                </a>
+                            </div>
+
+                            <!-- IF REJECTED (and NOT demo and not auto-rejected): DO NOT show Approve Shelter. Show Rejected message and Back button -->
+                            <div th:if="${!shelter.isDemoMode() and shelter.verificationMode != 'DEMO' and shelter.verificationStatus == 'REJECTED' and shelter.autoRejected != true}" class="d-flex align-items-center gap-2">
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle py-2 px-3 rounded-pill fw-semibold fs-6">
+                                    ✕ Shelter Rejected
+                                </span>
+                                <a th:href="@{/admin/shelter-verification}" class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-semibold">
+                                    Back to Shelters List
+                                </a>
+                            </div>
+
+                            <!-- DELETE SHELTER: available for all shelters -->
+                            <button type="button" class="btn btn-outline-danger rounded-pill px-3 py-2 fw-semibold shadow-sm"
+                                    data-bs-toggle="modal" data-bs-target="#deleteShelterModal" title="Delete shelter">
+                                🗑️ Delete Shelter
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Demo Mode Notice Banner if Demo Mode -->
+                    <div th:if="${shelter.isDemoMode() or shelter.verificationMode == 'DEMO'}" class="alert alert-warning border-0 rounded-4 mt-3 mb-0 p-3">
+                        <div class="d-flex align-items-start gap-2">
+                            <span class="fs-4">🧪</span>
+                            <div>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <h6 class="fw-bold mb-0 text-dark">DEMO MODE — FOR TESTING ONLY</h6>
+                                    <span class="badge bg-dark text-white" th:text="${shelter.verificationStatus}">DEMO_VALIDATION_PASSED</span>
+                                </div>
+                                <p class="mb-1 small text-dark">
+                                    <strong>Notice:</strong> Demo results do not prove government document authenticity. This record is simulated test data and cannot enter the production approval workflow.
+                                </p>
+                                <div class="small text-muted mt-1">
+                                    Demo Verification Score: <strong th:text="${(shelter.verificationConfidenceScore != null ? shelter.verificationConfidenceScore : 0) + ' / 100'}">0 / 100</strong>.
+                                    Status: <strong th:text="${shelter.verificationStatus}">DEMO_VALIDATION_PASSED</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Auto-Rejected Alert if auto-rejected (Production only) -->
+                    <div th:if="${!shelter.isDemoMode() and shelter.verificationMode != 'DEMO' and (shelter.verificationStatus == 'AUTO_REJECTED' or shelter.autoRejected == true)}" class="alert alert-danger border-0 rounded-4 mt-3 mb-0 p-3">
+                        <div class="d-flex align-items-start gap-2">
+                            <span class="fs-4">🤖</span>
+                            <div>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <h6 class="fw-bold mb-0 text-danger">AI Document Verification: Auto-Rejected</h6>
+                                    <span class="badge bg-danger text-white" th:if="${shelter.rejectionReasonCode != null}" th:text="${shelter.rejectionReasonCode}">WRONG_DOCUMENT_TYPE</span>
+                                    <span class="badge bg-dark text-white" th:if="${shelter.hardFail == true}">🚨 Hard-Fail</span>
+                                </div>
+                                <p class="mb-1 small" th:text="${shelter.rejectionReason != null ? shelter.rejectionReason : 'Document verification failed critical authenticity checks.'}">Reason for auto-rejection...</p>
+                                <div class="small text-muted mt-1">
+                                    AI Verification Confidence: <strong th:text="${(shelter.verificationConfidenceScore != null ? shelter.verificationConfidenceScore : 0) + ' / 100'}">0 / 100</strong>.
+                                    Direct administrator approval is disabled until the shelter owner uploads a compliant certificate.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Manual Review Alert if manual review -->
+                    <div th:if="${shelter.verificationStatus == 'MANUAL_REVIEW'}" class="alert alert-warning border-0 rounded-4 mt-3 mb-0 p-3">
+                        <div class="d-flex align-items-start gap-2">
+                            <span class="fs-4">🔍</span>
+                            <div>
+                                <h6 class="fw-bold mb-1 text-dark">AI Document Verification: Manual Review Required</h6>
+                                <p class="mb-0 small text-dark">
+                                    This certificate requires human inspection. AI Verification Confidence: 
+                                    <strong th:text="${(shelter.verificationConfidenceScore != null ? shelter.verificationConfidenceScore : (latestDoc != null ? latestDoc.verificationConfidenceScore : 0)) + ' / 100'}">65 / 100</strong>.
+                                    Examine the extracted details, cross-examine the uploaded document, and decide whether to approve or reject.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rejection Alert if manually rejected -->
+                    <div th:if="${shelter.verificationStatus == 'REJECTED' and shelter.autoRejected != true}" class="alert alert-danger border-0 rounded-4 mt-3 mb-0 p-3">
+                        <div class="d-flex align-items-start gap-2">
+                            <span class="fs-4">⚠️</span>
+                            <div>
+                                <h6 class="fw-bold mb-1 text-danger">Shelter Verification Declined</h6>
+                                <p class="mb-1 small" th:text="${shelter.rejectionReason != null ? shelter.rejectionReason : 'No rejection reason specified.'}">Reason for rejection...</p>
+                                <small class="text-muted" th:if="${shelter.verifiedAt != null}">
+                                    Decision recorded on <span th:text="${#temporals.format(shelter.verifiedAt, 'dd MMM yyyy, hh:mm a')}">Date</span> 
+                                    by <span th:text="${shelter.verifiedBy}">admin</span>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Approved Alert if approved -->
+                    <div th:if="${shelter.verificationStatus == 'APPROVED'}" class="alert alert-success border-0 rounded-4 mt-3 mb-0 p-3">
+                        <div class="d-flex align-items-start gap-2">
+                            <span class="fs-4">✅</span>
+                            <div>
+                                <h6 class="fw-bold mb-1 text-success">Shelter Verified &amp; Approved</h6>
+                                <p class="mb-0 small text-muted">
+                                    This shelter is verified and active on PetConnect. Rescued pet listings and pet care requests are fully operational.
+                                    <span th:if="${shelter.verifiedAt != null}">
+                                        Verified on <strong th:text="${#temporals.format(shelter.verifiedAt, 'dd MMM yyyy, hh:mm a')}">Date</strong> 
+                                        by <strong th:text="${shelter.verifiedBy}">admin</strong>.
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2-Column Detail Layout -->
+                <div class="row g-4 mb-4">
+                    <!-- Column Left: Shelter Info & Verification Proofs -->
+                    <div class="col-lg-7">
+                        <!-- 1. Shelter Information Card -->
+                        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                            <h5 class="fw-bold mb-3 text-purple">1. Shelter Details &amp; Operations</h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <span class="text-muted small text-uppercase fw-semibold d-block">Total Boarding Capacity</span>
+                                    <span class="fs-5 fw-bold text-dark" th:text="${shelter.capacity + ' Pets'}">20 Pets</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="text-muted small text-uppercase fw-semibold d-block">Available Capacity</span>
+                                    <span class="fs-5 fw-bold text-dark" th:text="${shelter.availableCapacity + ' Slots'}">10 Slots</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="text-muted small text-uppercase fw-semibold d-block">Boarding Fee</span>
+                                    <span class="fs-5 fw-bold text-success" th:text="'₹ ' + ${shelter.boardingFee} + ' / day'">₹ 300.0 / day</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="text-muted small text-uppercase fw-semibold d-block">Temporary Care Status</span>
+                                    <span class="badge py-1 px-3 rounded-pill mt-1" 
+                                          th:classappend="${shelter.temporaryCareEnabled ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}"
+                                          th:text="${shelter.temporaryCareEnabled ? 'Enabled' : 'Disabled'}">Enabled</span>
+                                </div>
+                                <div class="col-12">
+                                    <span class="text-muted small text-uppercase fw-semibold d-block">Supported Pet Types</span>
+                                    <span class="badge bg-light text-dark border px-3 py-2 rounded-pill mt-1" th:text="${shelter.supportedPetTypes}">DOG, CAT</span>
+                                </div>
+                                <div class="col-12">
+                                    <span class="text-muted small text-uppercase fw-semibold d-block">Shelter Description</span>
+                                    <p class="text-dark bg-light rounded-3 p-3 mt-1 mb-0 small" th:text="${shelter.description != null and !shelter.description.isEmpty() ? shelter.description : 'No description provided.'}">
+                                        Shelter description here...
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Verification Documents / Proofs Card -->
+                        <div class="card border-0 shadow-sm rounded-4 p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold mb-0 text-purple">2. Verification Proof Documents</h5>
+                                <span class="badge bg-light text-muted border">Review authenticity</span>
+                            </div>
+                            <p class="text-muted small mb-4">Examine legal registration certificates and identity proofs submitted by the shelter owner.</p>
+
+                            <div class="d-flex flex-column gap-3">
+                                <!-- Document 1: Government Registration -->
+                                <div class="p-3 bg-light rounded-4 border d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="fs-3">📜</span>
+                                        <div>
+                                            <h6 class="fw-bold mb-0 text-dark">Government / Society / Trust Certificate</h6>
+                                            <small class="text-muted">Legal NGO or animal shelter registration proof</small>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div th:if="${shelter.registrationDocument != null and !shelter.registrationDocument.isEmpty()}">
+                                            <a th:href="@{/shelters/{id}/documents/registration(id=${shelter.id})}" target="_blank" 
+                                               class="btn btn-sm btn-outline-purple rounded-pill px-3 py-1 fw-semibold">
+                                                View Document ↗
+                                            </a>
+                                            <span class="badge bg-success-subtle text-success ms-1">Uploaded</span>
+                                        </div>
+                                        <span th:if="${shelter.registrationDocument == null or shelter.registrationDocument.isEmpty()}" 
+                                              class="badge bg-secondary-subtle text-muted rounded-pill px-3 py-2">
+                                            Not Uploaded
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Document 2: Shelter Owner ID Proof -->
+                                <div class="p-3 bg-light rounded-4 border d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="fs-3">🪪</span>
+                                        <div>
+                                            <h6 class="fw-bold mb-0 text-dark">Owner ID Proof (Aadhaar / PAN / Voter ID)</h6>
+                                            <small class="text-muted">Identity verification of registered manager</small>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div th:if="${shelter.identityDocument != null and !shelter.identityDocument.isEmpty()}">
+                                            <a th:href="@{/shelters/{id}/documents/identity(id=${shelter.id})}" target="_blank" 
+                                               class="btn btn-sm btn-outline-purple rounded-pill px-3 py-1 fw-semibold">
+                                                View Document ↗
+                                            </a>
+                                            <span class="badge bg-success-subtle text-success ms-1">Uploaded</span>
+                                        </div>
+                                        <span th:if="${shelter.identityDocument == null or shelter.identityDocument.isEmpty()}" 
+                                              class="badge bg-secondary-subtle text-muted rounded-pill px-3 py-2">
+                                            Not Uploaded
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Document 3: Shelter Address Proof -->
+                                <div class="p-3 bg-light rounded-4 border d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="fs-3">📑</span>
+                                        <div>
+                                            <h6 class="fw-bold mb-0 text-dark">Shelter Address Proof</h6>
+                                            <small class="text-muted">Utility bill, lease agreement, or property deed</small>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div th:if="${shelter.addressProof != null and !shelter.addressProof.isEmpty()}">
+                                            <a th:href="@{/shelters/{id}/documents/address(id=${shelter.id})}" target="_blank" 
+                                               class="btn btn-sm btn-outline-purple rounded-pill px-3 py-1 fw-semibold">
+                                                View Document ↗
+                                            </a>
+                                            <span class="badge bg-success-subtle text-success ms-1">Uploaded</span>
+                                        </div>
+                                        <span th:if="${shelter.addressProof == null or shelter.addressProof.isEmpty()}" 
+                                              class="badge bg-secondary-subtle text-muted rounded-pill px-3 py-2">
+                                            Not Uploaded
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Document 4: Photos / Other Document -->
+                                <div class="p-3 bg-light rounded-4 border d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="fs-3">📷</span>
+                                        <div>
+                                            <h6 class="fw-bold mb-0 text-dark">Facility Photos / Additional Docs</h6>
+                                            <small class="text-muted">Pictures of kennels, clinic, play yard</small>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div th:if="${shelter.otherDocument != null and !shelter.otherDocument.isEmpty()}">
+                                            <a th:href="@{/shelters/{id}/documents/other(id=${shelter.id})}" target="_blank" 
+                                               class="btn btn-sm btn-outline-purple rounded-pill px-3 py-1 fw-semibold">
+                                                View Document ↗
+                                            </a>
+                                            <span class="badge bg-success-subtle text-success ms-1">Uploaded</span>
+                                        </div>
+                                        <span th:if="${shelter.otherDocument == null or shelter.otherDocument.isEmpty()}" 
+                                              class="badge bg-secondary-subtle text-muted rounded-pill px-3 py-2">
+                                            Not Uploaded
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. AI Document Verification Analysis Card -->
+                        <div class="card border-0 shadow-sm rounded-4 p-4 mt-4 mb-4">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fs-4">🤖</span>
+                                    <h5 class="fw-bold mb-0 text-purple">3. AI Document Verification Analysis</h5>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge py-2 px-3 rounded-pill fw-semibold"
+                                          th:classappend="${shelter.riskLevel == 'LOW' ? 'bg-success text-white' : (shelter.riskLevel == 'HIGH' ? 'bg-danger text-white' : 'bg-warning text-dark')}"
+                                          th:text="${shelter.riskLevel != null ? shelter.riskLevel + ' RISK' : 'MEDIUM RISK'}">LOW RISK</span>
+                                    <span class="badge bg-danger text-white py-2 px-3 rounded-pill fw-semibold" th:if="${shelter.hardFail}">
+                                        🚨 Hard-Fail
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- AI Verification Confidence Progress Bar -->
+                            <div class="bg-light rounded-4 p-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small fw-bold text-dark">AI Verification Confidence</span>
+                                    <span class="fs-5 fw-bold"
+                                          th:classappend="${(shelter.verificationConfidenceScore != null ? shelter.verificationConfidenceScore : 0) >= 85 ? 'text-success' : ((shelter.verificationConfidenceScore != null ? shelter.verificationConfidenceScore : 0) < 40 ? 'text-danger' : 'text-warning')}"
+                                          th:text="${(shelter.verificationConfidenceScore != null ? shelter.verificationConfidenceScore : (latestDoc != null ? latestDoc.verificationConfidenceScore : 0)) + ' / 100'}">
+                                        85 / 100
+                                    </span>
+                                </div>
+                                <div class="progress rounded-pill" style="height: 10px;">
+                                    <div class="progress-bar rounded-pill" role="progressbar"
+                                         th:style="'width: ' + ${(shelter.verificationConfidenceScore != null ? shelter.verificationConfidenceScore : (latestDoc != null ? latestDoc.verificationConfidenceScore : 0))} + '%;'"
+                                         th:classappend="${(shelter.verificationConfidenceScore != null ? shelter.verificationConfidenceScore : 0) >= 85 ? 'bg-success' : ((shelter.verificationConfidenceScore != null ? shelter.verificationConfidenceScore : 0) < 40 ? 'bg-danger' : 'bg-warning')}">
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between small text-muted mt-2">
+                                    <span>&lt; 40: Auto-Reject</span>
+                                    <span>40 - 84: Manual Review</span>
+                                    <span>&ge; 85: Low Risk</span>
+                                </div>
+                            </div>
+
+                            <!-- Micro-checks Grid -->
+                            <div class="row g-2 mb-3">
+                                <!-- Check 1: Document Type -->
+                                <div class="col-sm-6">
+                                    <div class="p-3 bg-light rounded-3 border h-100">
+                                        <span class="text-muted small text-uppercase fw-semibold d-block">Document Type</span>
+                                        <div class="d-flex align-items-center justify-content-between mt-1">
+                                            <span class="fw-bold text-dark small" th:text="${latestDoc != null and latestDoc.documentType != null ? latestDoc.documentType : 'REGISTRATION_CERTIFICATE'}">CERTIFICATE</span>
+                                            <span class="badge" th:classappend="${latestDoc != null and 'WRONG_DOCUMENT_TYPE'.equals(latestDoc.documentType) ? 'bg-danger text-white' : 'bg-success text-white'}">
+                                                <span th:text="${latestDoc != null and 'WRONG_DOCUMENT_TYPE'.equals(latestDoc.documentType) ? 'Fail' : 'Pass'}">Pass</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Check 2: Shelter Name Match -->
+                                <div class="col-sm-6">
+                                    <div class="p-3 bg-light rounded-3 border h-100">
+                                        <span class="text-muted small text-uppercase fw-semibold d-block">Shelter Name Match</span>
+                                        <div class="d-flex align-items-center justify-content-between mt-1">
+                                            <span class="fw-bold text-dark small text-truncate" style="max-width: 130px;" th:text="${shelter.name}">Name</span>
+                                            <span class="badge" th:classappend="${latestDoc != null and latestDoc.nameMatch != null and latestDoc.nameMatch ? 'bg-success text-white' : 'bg-warning text-dark'}">
+                                                <span th:text="${latestDoc != null and latestDoc.nameMatch != null and latestDoc.nameMatch ? 'Matched' : 'Discrepancy'}">Matched</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Check 3: Address Match -->
+                                <div class="col-sm-6">
+                                    <div class="p-3 bg-light rounded-3 border h-100">
+                                        <span class="text-muted small text-uppercase fw-semibold d-block">Address / City Match</span>
+                                        <div class="d-flex align-items-center justify-content-between mt-1">
+                                            <span class="fw-bold text-dark small text-truncate" style="max-width: 130px;" th:text="${shelter.city != null ? shelter.city : 'Not specified'}">City</span>
+                                            <span class="badge" th:classappend="${latestDoc != null and latestDoc.addressMatch != null and latestDoc.addressMatch ? 'bg-success text-white' : 'bg-warning text-dark'}">
+                                                <span th:text="${latestDoc != null and latestDoc.addressMatch != null and latestDoc.addressMatch ? 'Matched' : 'Discrepancy'}">Matched</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Check 4: Registration Number -->
+                                <div class="col-sm-6">
+                                    <div class="p-3 bg-light rounded-3 border h-100">
+                                        <span class="text-muted small text-uppercase fw-semibold d-block">Registration Number Match</span>
+                                        <div class="d-flex align-items-center justify-content-between mt-1">
+                                            <span class="fw-bold text-dark small text-truncate" style="max-width: 130px;" 
+                                                  th:text="${latestDoc != null and latestDoc.extractedRegistrationNumber != null ? latestDoc.extractedRegistrationNumber : (shelter.registrationNumber != null ? shelter.registrationNumber : 'None')}">
+                                                TN/NGO/2021
+                                            </span>
+                                            <span class="badge" th:classappend="${latestDoc != null and latestDoc.registrationNumberMatch != null and latestDoc.registrationNumberMatch ? 'bg-success text-white' : (latestDoc != null and latestDoc.registrationNumberDetected != null and latestDoc.registrationNumberDetected ? 'bg-danger text-white' : 'bg-secondary text-white')}">
+                                                <span th:text="${latestDoc != null and latestDoc.registrationNumberMatch != null and latestDoc.registrationNumberMatch ? 'Matched' : (latestDoc != null and latestDoc.registrationNumberDetected != null and latestDoc.registrationNumberDetected ? 'Mismatch' : 'Not Found')}">Matched</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Check 5: Issue & Expiry Dates -->
+                                <div class="col-sm-6">
+                                    <div class="p-3 bg-light rounded-3 border h-100">
+                                        <span class="text-muted small text-uppercase fw-semibold d-block">Certificate Validity Dates</span>
+                                        <div class="d-flex align-items-center justify-content-between mt-1">
+                                            <span class="fw-bold text-dark small text-truncate" style="max-width: 130px;" 
+                                                  th:text="${latestDoc != null and latestDoc.expiryDate != null ? 'Exp: ' + latestDoc.expiryDate : 'No Expiry'}">Valid</span>
+                                            <span class="badge" th:classappend="${latestDoc != null and latestDoc.dateValid != null and latestDoc.dateValid ? 'bg-success text-white' : (latestDoc != null and latestDoc.dateValid != null ? 'bg-danger text-white' : 'bg-secondary text-white')}">
+                                                <span th:text="${latestDoc != null and latestDoc.dateValid != null and latestDoc.dateValid ? 'Valid' : (latestDoc != null and latestDoc.dateValid != null ? 'Invalid / Expired' : 'Not Checked')}">Valid</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Check 6: QR Code & Live Verification -->
+                                <div class="col-sm-6">
+                                    <div class="p-3 bg-light rounded-3 border h-100">
+                                        <span class="text-muted small text-uppercase fw-semibold d-block">QR Code &amp; Gov Verification</span>
+                                        <div class="d-flex align-items-center justify-content-between mt-1">
+                                            <span class="fw-bold text-muted small">Official: NOT_AVAILABLE</span>
+                                            <span class="badge" th:classappend="${latestDoc != null and latestDoc.qrDetected != null and latestDoc.qrDetected ? 'bg-info text-dark' : 'bg-light text-muted border'}">
+                                                <span th:text="${latestDoc != null and latestDoc.qrDetected != null and latestDoc.qrDetected ? 'QR Present' : 'No QR'}">No QR</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Check 7: Tampering & EXIF Analysis -->
+                                <div class="col-12">
+                                    <div class="p-3 bg-light rounded-3 border">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div>
+                                                <span class="text-muted small text-uppercase fw-semibold d-block">Metadata &amp; Tampering Analysis</span>
+                                                <span class="small text-dark" th:text="${latestDoc != null and latestDoc.tamperingIndicators != null and latestDoc.tamperingIndicators ? '⚠️ Editing software traces or chronological date anomalies detected' : '✓ No tampering or editing software signatures found in metadata'}">
+                                                    No tampering found
+                                                </span>
+                                            </div>
+                                            <span class="badge" th:classappend="${latestDoc != null and latestDoc.tamperingIndicators != null and latestDoc.tamperingIndicators ? 'bg-danger text-white' : 'bg-success text-white'}">
+                                                <span th:text="${latestDoc != null and latestDoc.tamperingIndicators != null and latestDoc.tamperingIndicators ? 'Flagged' : 'Clean'}">Clean</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Findings & Reasons -->
+                            <div th:if="${shelter.verificationReasons != null and !shelter.verificationReasons.isEmpty()}" class="mb-3">
+                                <span class="small fw-semibold text-muted text-uppercase d-block mb-1">AI Findings &amp; Validation Reasons:</span>
+                                <div class="bg-light p-3 rounded-3 border">
+                                    <ul class="list-unstyled mb-0 small">
+                                        <li th:each="r : ${shelter.getVerificationReasonsList()}" class="py-1 d-flex align-items-start gap-2">
+                                            <span th:text="${#strings.contains(r, '✕') or #strings.contains(r, 'FAILED') or #strings.contains(r, 'Low confidence') or #strings.contains(r, 'tampering') or #strings.contains(r, 'Mismatch') or #strings.contains(r, 'conflict') ? '⚠️' : 'ℹ️'}">ℹ️</span>
+                                            <span th:text="${r}" class="text-dark">Reason detail</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Verification Audit Trail -->
+                            <div th:if="${verificationAudits != null and !#lists.isEmpty(verificationAudits)}" class="mb-3">
+                                <span class="small fw-semibold text-muted text-uppercase d-block mb-1">Audit History:</span>
+                                <div class="table-responsive bg-light rounded-3 border">
+                                    <table class="table table-sm table-borderless mb-0 small">
+                                        <thead class="text-muted border-bottom">
+                                            <tr>
+                                                <th class="ps-3">Timestamp</th>
+                                                <th>Action</th>
+                                                <th>Actor</th>
+                                                <th>Score</th>
+                                                <th>Risk</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:each="a : ${verificationAudits}">
+                                                <td class="ps-3 text-muted" th:text="${#temporals.format(a.timestamp, 'dd MMM yyyy, hh:mm a')}">Date</td>
+                                                <td>
+                                                    <span class="badge" th:classappend="${'ADMIN_APPROVED'.equals(a.actionTaken) ? 'bg-success' : ('AUTO_REJECTED'.equals(a.actionTaken) or 'ADMIN_REJECTED'.equals(a.actionTaken) ? 'bg-danger' : 'bg-warning text-dark')}" th:text="${a.actionTaken}">ACTION</span>
+                                                </td>
+                                                <td class="text-dark" th:text="${a.actedBy}">admin</td>
+                                                <td class="fw-bold" th:text="${a.confidenceScore != null ? a.confidenceScore + ' / 100' : '-'}">85 / 100</td>
+                                                <td>
+                                                    <span class="badge" th:classappend="${'LOW'.equals(a.riskLevel) ? 'bg-success-subtle text-success' : ('HIGH'.equals(a.riskLevel) ? 'bg-danger-subtle text-danger' : 'bg-warning-subtle text-dark')}" th:text="${a.riskLevel}">LOW</span>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Full JSON Inspection Button -->
+                            <button type="button" class="btn btn-outline-purple rounded-pill px-4 py-2 fw-semibold btn-sm w-100"
+                                    data-bs-toggle="modal" data-bs-target="#aiAnalysisModal" onclick="loadAiAnalysisModal()">
+                                🔍 View Complete AI Analysis Payload (JSON &amp; Checks)
+                            </button>
+                        </div>
+
+                        <!-- Shelter Facility Photos Gallery Card -->
+                        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold mb-0 text-purple">📷 Shelter Facility Photos</h5>
+                                <span class="badge bg-purple-subtle text-purple rounded-pill px-3 py-1 fw-semibold" 
+                                      th:text="${shelter.images != null ? #lists.size(shelter.images) + ' / 5 Photos' : '0 / 5 Photos'}">0 / 5 Photos</span>
+                            </div>
+                            <p class="text-muted small mb-3">Premises, boarding kennels, and play yard pictures submitted by the shelter owner.</p>
+
+                            <div th:if="${shelter.images != null and not #lists.isEmpty(shelter.images)}" class="row g-3">
+                                <div class="col-6 col-sm-4" th:each="img : ${shelter.images}">
+                                    <div class="border rounded-4 overflow-hidden position-relative shadow-sm bg-light" style="height: 120px;">
+                                        <a th:href="@{${img.imageUrl}}" target="_blank" title="Click to view full photo">
+                                            <img th:src="@{${img.imageUrl}}" class="w-100 h-100 object-fit-cover" alt="Shelter photo"
+                                                 onerror="this.src='https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&q=80&w=400'">
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div th:if="${shelter.images == null or #lists.isEmpty(shelter.images)}" class="p-4 bg-light rounded-4 text-center border">
+                                <p class="text-muted small mb-0">No facility photos uploaded by the shelter owner yet.</p>
+                            </div>
+                        </div>
+
+                        <!-- Card: Adopter Shelter Reviews -->
+                        <div class="card border-0 shadow-sm p-4 rounded-card mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h5 class="fw-bold mb-1 text-dark">⭐ Adopter Reviews for This Shelter</h5>
+                                    <p class="text-muted small mb-0">Community ratings and feedback submitted after completed adoptions.</p>
+                                </div>
+                                <span class="badge bg-purple px-3 py-2 rounded-pill fw-semibold" th:text="${reviewsCount + ' Reviews'}">0 Reviews</span>
+                            </div>
+
+                            <div th:if="${shelterReviews != null and not #lists.isEmpty(shelterReviews)}" class="d-flex flex-column gap-3">
+                                <div th:each="r : ${shelterReviews}" class="p-3 rounded-4 bg-light border">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <strong class="text-dark" th:text="${r.user.fullName}">Adopter Name</strong>
+                                            <span class="text-muted small ms-2" th:text="${'• Adopted ' + r.pet.name}">• Adopted Bruno</span>
+                                        </div>
+                                        <div class="text-warning fw-bold small" th:text="${r.starsDisplay + ' (' + r.rating + '/5)'}">★★★★★ (5/5)</div>
+                                    </div>
+                                    <p class="mb-0 text-dark small" style="white-space: pre-line;" th:text="${r.comment}">Review comment text</p>
+                                    <div class="text-muted small mt-1 text-end" th:text="${#temporals.format(r.createdAt, 'dd MMM yyyy')}">Date</div>
+                                </div>
+                            </div>
+
+                            <div th:if="${shelterReviews == null or #lists.isEmpty(shelterReviews)}" class="text-center py-4 bg-light rounded-4">
+                                <p class="text-muted small mb-0">No adopter reviews submitted for this shelter yet.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column Right: Owner Details, Location, Decision Box -->
+                    <div class="col-lg-5">
+                        <!-- 3. Owner Information Card -->
+                        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                            <h5 class="fw-bold mb-3 text-purple">3. Shelter Owner Profile</h5>
+                            <div class="d-flex align-items-center gap-3 mb-3 p-3 bg-light rounded-4">
+                                <span class="fs-2">👤</span>
+                                <div>
+                                    <h6 class="fw-bold mb-0 text-dark" th:text="${shelter.owner != null and shelter.owner.fullName != null and !shelter.owner.fullName.isEmpty() ? shelter.owner.fullName : 'Not provided'}">Owner Name</h6>
+                                    <span class="badge bg-purple-subtle text-purple small">SHELTER_OWNER</span>
+                                </div>
+                            </div>
+                            <div class="row g-2 small">
+                                <div class="col-4 text-muted fw-semibold">Email:</div>
+                                <div class="col-8 text-dark fw-bold" th:text="${shelter.owner != null and shelter.owner.email != null and !shelter.owner.email.isEmpty() ? shelter.owner.email : (shelter.email != null and !shelter.email.isEmpty() ? shelter.email : 'Not provided')}">owner@email.com</div>
+
+                                <div class="col-4 text-muted fw-semibold">Phone:</div>
+                                <div class="col-8 text-dark fw-bold" th:text="${shelter.owner != null and shelter.owner.phone != null and !shelter.owner.phone.isEmpty() ? shelter.owner.phone : (shelter.phone != null and !shelter.phone.isEmpty() ? shelter.phone : 'Not provided')}">9876543210</div>
+
+                                <div class="col-4 text-muted fw-semibold">User ID:</div>
+                                <div class="col-8 text-muted" th:text="${shelter.owner != null and shelter.owner.id != null ? '#' + shelter.owner.id : 'Not provided'}">#10</div>
+                            </div>
+                        </div>
+
+                        <!-- 4. Address & Location Card -->
+                        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                            <h5 class="fw-bold mb-3 text-purple">4. Address &amp; Physical Location</h5>
+                            <div class="row g-2 small">
+                                <div class="col-4 text-muted fw-semibold">Area / Place:</div>
+                                <div class="col-8 text-dark fw-bold" th:text="${shelter.area != null and !shelter.area.isEmpty() ? shelter.area : 'Not provided'}">Anna Nagar</div>
+
+                                <div class="col-4 text-muted fw-semibold">City:</div>
+                                <div class="col-8 text-dark fw-bold" th:text="${shelter.city != null and !shelter.city.isEmpty() ? shelter.city : 'Not provided'}">Chennai</div>
+
+                                <div class="col-4 text-muted fw-semibold">State:</div>
+                                <div class="col-8 text-dark fw-bold" th:text="${shelter.state != null and !shelter.state.isEmpty() ? shelter.state : 'Not provided'}">Tamil Nadu</div>
+
+                                <div class="col-4 text-muted fw-semibold">Full Address:</div>
+                                <div class="col-8 text-dark" th:text="${shelter.address != null and !shelter.address.isEmpty() ? shelter.address : (shelter.location != null and !shelter.location.isEmpty() ? shelter.location : 'Not provided')}">Address line here...</div>
+
+                                <div class="col-4 text-muted fw-semibold">General Location:</div>
+                                <div class="col-8 text-dark" th:text="${shelter.location != null and !shelter.location.isEmpty() ? shelter.location : 'Not provided'}">Location tag</div>
+
+                                <div class="col-4 text-muted fw-semibold">Official Phone:</div>
+                                <div class="col-8 text-dark" th:text="${shelter.phone != null and !shelter.phone.isEmpty() ? shelter.phone : 'Not provided'}">Phone</div>
+
+                                <div class="col-4 text-muted fw-semibold">Official Email:</div>
+                                <div class="col-8 text-dark" th:text="${shelter.email != null and !shelter.email.isEmpty() ? shelter.email : 'Not provided'}">Email</div>
+                            </div>
+                        </div>
+
+                        <!-- 5. Verification Decision Card -->
+                        <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
+                            <h5 class="fw-bold mb-2 text-dark">Verification Status</h5>
+
+                            <!-- IF AUTO_REJECTED: Direct approve blocked! -->
+                            <div th:if="${shelter.verificationStatus == 'AUTO_REJECTED' or shelter.autoRejected == true}" class="py-2">
+                                <div class="mb-3">
+                                    <span class="fs-1 text-danger">🤖</span>
+                                </div>
+                                <h5 class="fw-bold text-danger mb-2">✕ Auto-Rejected by System</h5>
+                                <div class="alert alert-danger border-0 rounded-4 text-start p-3 mb-3">
+                                    <span class="fw-bold small d-block mb-1">Direct Approval Blocked:</span>
+                                    <span class="small">
+                                        This shelter application was automatically rejected because the uploaded certificate failed critical authenticity checks 
+                                        <span th:if="${shelter.rejectionReasonCode != null}" class="badge bg-danger text-white ms-1" th:text="${shelter.rejectionReasonCode}">WRONG_DOC</span>.
+                                        Direct approval is prohibited. The shelter owner must upload a corrected certificate to resubmit.
+                                    </span>
+                                </div>
+                                <div class="d-flex flex-column gap-2">
+                                    <button type="button" class="btn btn-outline-danger rounded-pill py-2 fw-semibold"
+                                            data-bs-toggle="modal" data-bs-target="#rejectModal">
+                                        ✕ Add Rejection Notes / Reconfirm
+                                    </button>
+                                    <a th:href="@{/admin/shelter-verification}" class="btn btn-outline-secondary rounded-pill py-2 fw-semibold">
+                                        Back to Shelters List
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- IF PENDING or MANUAL_REVIEW (and not auto-rejected): Show Approve + Reject Buttons -->
+                            <div th:if="${(shelter.verificationStatus == 'PENDING' or shelter.verificationStatus == 'MANUAL_REVIEW') and shelter.autoRejected != true}">
+                                <p class="text-muted small mb-4">Confirm whether this shelter meets PetConnect safety and authenticity guidelines.</p>
+                                <div class="d-flex flex-column gap-2">
+                                    <button type="button" class="btn btn-success rounded-pill py-3 fw-bold shadow-sm"
+                                            data-bs-toggle="modal" data-bs-target="#approveModal">
+                                        ✓ APPROVE SHELTER
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger rounded-pill py-3 fw-bold"
+                                            data-bs-toggle="modal" data-bs-target="#rejectModal">
+                                        ✕ REJECT SHELTER
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- IF APPROVED: DO NOT show Approve button. Show verified confirmation -->
+                            <div th:if="${shelter.verificationStatus == 'APPROVED'}" class="py-2">
+                                <div class="mb-3">
+                                    <span class="fs-1 text-success">✅</span>
+                                </div>
+                                <h5 class="fw-bold text-success mb-2">✓ Shelter Verified &amp; Approved</h5>
+                                <p class="text-muted small mb-3">
+                                    This shelter is authorized and operational on PetConnect.
+                                    <span th:if="${shelter.verifiedAt != null}">
+                                        <br>Verified on <strong th:text="${#temporals.format(shelter.verifiedAt, 'dd MMM yyyy, hh:mm a')}">Date</strong>
+                                        by <strong th:text="${shelter.verifiedBy}">admin</strong>.
+                                    </span>
+                                </p>
+                                <a th:href="@{/admin/shelter-verification}" class="btn btn-outline-secondary rounded-pill w-100 py-2 fw-semibold">
+                                    Back to Shelters List
+                                </a>
+                            </div>
+
+                            <!-- IF REJECTED (and not auto-rejected): DO NOT show Approve button. Show rejected feedback -->
+                            <div th:if="${shelter.verificationStatus == 'REJECTED' and shelter.autoRejected != true}" class="py-2">
+                                <div class="mb-3">
+                                    <span class="fs-1 text-danger">⚠️</span>
+                                </div>
+                                <h5 class="fw-bold text-danger mb-2">✕ Shelter Rejected</h5>
+                                <div class="alert alert-danger border-0 rounded-4 text-start p-3 mb-3">
+                                    <span class="fw-bold small d-block mb-1">Rejection Reason:</span>
+                                    <span class="small" th:text="${shelter.rejectionReason != null ? shelter.rejectionReason : 'No rejection reason specified.'}">Reason</span>
+                                </div>
+                                <p class="text-muted small mb-3" th:if="${shelter.verifiedAt != null}">
+                                    Decision recorded on <strong th:text="${#temporals.format(shelter.verifiedAt, 'dd MMM yyyy, hh:mm a')}">Date</strong>
+                                    by <strong th:text="${shelter.verifiedBy}">admin</strong>.
+                                </p>
+                                <a th:href="@{/admin/shelter-verification}" class="btn btn-outline-secondary rounded-pill w-100 py-2 fw-semibold">
+                                    Back to Shelters List
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rescued Pets Currently under Shelter (if any) -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 mb-4" th:if="${petsCount > 0}">
+                    <h5 class="fw-bold mb-3 text-dark">Rescued Pets Under This Shelter (<span th:text="${petsCount}">0</span>)</h5>
+                    <div class="row g-3">
+                        <div class="col-md-4 col-lg-3" th:each="pet : ${shelterPets}">
+                            <div class="border rounded-4 p-3 bg-light d-flex align-items-center gap-3">
+                                <img th:src="${pet.displayPhoto}" onerror="this.src='https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=400'" class="rounded-circle object-fit-cover" width="50" height="50" alt="pet">
+                                <div>
+                                    <span class="fw-bold text-dark d-block" th:text="${pet.name}">Max</span>
+                                    <small class="text-muted" th:text="${pet.type + ' • ' + pet.breed}">DOG</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Approve Modal (Rendered for PENDING or MANUAL_REVIEW when not auto-rejected) -->
+            <div th:if="${(shelter.verificationStatus == 'PENDING' or shelter.verificationStatus == 'MANUAL_REVIEW') and shelter.autoRejected != true}" class="modal fade" id="approveModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content rounded-4 border-0 shadow">
+                        <form th:action="@{/admin/shelter-verification/{id}/approve(id=${shelter.id}, redirect='details')}" method="POST">
+                            <div class="modal-header border-0 pb-0">
+                                <h5 class="modal-title fw-bold text-success">Approve Shelter Application</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="text-muted mb-3">
+                                    Are you sure you want to verify and approve <strong th:text="${shelter.name}">Shelter</strong>?
+                                </p>
+                                <ul class="small text-muted mb-0">
+                                    <li>Status will be updated to <strong>APPROVED</strong>.</li>
+                                    <li>The shelter owner will be notified immediately.</li>
+                                    <li>Rescued pet listings and pet care requests will be enabled.</li>
+                                </ul>
+                            </div>
+                            <div class="modal-footer border-0 pt-0">
+                                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold">Confirm &amp; Approve</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reject Modal (Rendered for PENDING, MANUAL_REVIEW, or AUTO_REJECTED) -->
+            <div th:if="${shelter.verificationStatus != 'APPROVED'}" class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content rounded-4 border-0 shadow">
+                        <form th:action="@{/admin/shelter-verification/{id}/reject(id=${shelter.id}, redirect='details')}" method="POST">
+                            <div class="modal-header border-0 pb-0">
+                                <h5 class="modal-title fw-bold text-danger">Reject Shelter Application</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="text-muted small">Please provide the exact reason for declining this shelter application. This explanation will be communicated to the shelter owner so they can rectify their documents.</p>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold small text-muted text-uppercase">Rejection Reason *</label>
+                                    <textarea name="rejectionReason" class="form-control rounded-3 border-light bg-light" rows="3" 
+                                              placeholder="e.g. Government registration certificate is invalid, or address proof does not match shelter location." required></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer border-0 pt-0">
+                                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-danger rounded-pill px-4 fw-semibold">Confirm Rejection</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete Shelter Confirmation Modal -->
+            <div class="modal fade" id="deleteShelterModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content rounded-4 border-0 shadow">
+                        <form th:action="@{/admin/shelter-verification/{id}/delete(id=${shelter.id})}" method="POST">
+                            <div class="modal-header border-0 pb-0">
+                                <h5 class="modal-title fw-bold text-danger">Delete Shelter Confirmation</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="fs-6 fw-bold text-dark mb-3">Are you sure you want to permanently delete this shelter?</p>
+                                <div class="bg-light p-3 rounded-3 mb-3 small">
+                                    <div class="mb-2"><strong>Shelter Name:</strong> <span class="fw-semibold text-dark" th:text="${shelter.name}">Shelter Name</span></div>
+                                    <div class="mb-2"><strong>Owner Name:</strong> <span class="fw-semibold text-dark" th:text="${shelter.owner != null ? shelter.owner.fullName : 'No Owner Assigned'}">Owner Name</span></div>
+                                    <div><strong>Shelter Location:</strong> <span class="fw-semibold text-dark" th:text="${shelter.location != null ? shelter.location : (shelter.city != null ? shelter.city : 'Not Specified')}">Location</span></div>
+                                </div>
+                                <div class="alert alert-warning border-0 rounded-3 small mb-0 py-2">
+                                    ⚠️ <strong>Warning:</strong> This action cannot be undone.
+                                </div>
+                            </div>
+                            <div class="modal-footer border-0 pt-0">
+                                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-danger rounded-pill px-4 fw-semibold">Delete Permanently</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Complete AI Analysis Modal -->
+            <div class="modal fade" id="aiAnalysisModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content rounded-4 border-0 shadow">
+                        <div class="modal-header border-0 pb-0">
+                            <h5 class="modal-title fw-bold text-purple">🤖 Complete AI Verification Analysis</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="aiModalSpinner" class="text-center py-4">
+                                <div class="spinner-border text-purple" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="text-muted small mt-2">Loading verification audit &amp; analysis...</p>
+                            </div>
+                            <div id="aiModalContent" style="display: none;">
+                                <div class="table-responsive mb-3">
+                                    <table class="table table-sm table-bordered">
+                                        <tbody id="aiAnalysisSummaryTbody"></tbody>
+                                    </table>
+                                </div>
+                                <label class="form-label fw-semibold text-muted small text-uppercase">Raw JSON Payload</label>
+                                <pre id="aiAnalysisJsonPre" class="p-3 bg-light rounded-3 small" style="max-height: 250px; overflow-y: auto;"></pre>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <footer class="footer py-4 text-center mt-auto border-top bg-white">
+                <div class="container">
+                    <p class="mb-0 text-muted">&copy; 2026 PetConnect. All rights reserved. Connect. Care. Adopt.</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+    const shelterId = /*[[${shelter.id}]]*/ 0;
+    function loadAiAnalysisModal() {
+        const spinner = document.getElementById('aiModalSpinner');
+        const content = document.getElementById('aiModalContent');
+        const tbody = document.getElementById('aiAnalysisSummaryTbody');
+        const pre = document.getElementById('aiAnalysisJsonPre');
+        
+        spinner.style.display = 'block';
+        content.style.display = 'none';
+
+        fetch('/admin/shelter-verification/' + shelterId + '/ai-analysis')
+            .then(response => response.json())
+            .then(data => {
+                spinner.style.display = 'none';
+                content.style.display = 'block';
+                pre.textContent = JSON.stringify(data, null, 2);
+
+                let rows = `
+                    <tr><th class="bg-light" style="width: 35%;">AI Verification Confidence</th><td class="fw-bold">${data.confidenceScore !== null ? data.confidenceScore + ' / 100' : 'N/A'}</td></tr>
+                    <tr><th class="bg-light">Risk Level</th><td><span class="badge ${data.riskLevel === 'LOW' ? 'bg-success' : (data.riskLevel === 'HIGH' ? 'bg-danger' : 'bg-warning text-dark')}">${data.riskLevel}</span></td></tr>
+                    <tr><th class="bg-light">AI Recommendation</th><td class="fw-bold">${data.aiRecommendation || 'N/A'}</td></tr>
+                    <tr><th class="bg-light">Hard-Fail Triggered</th><td>${data.hardFail ? '🚨 YES' : 'No'}</td></tr>
+                    <tr><th class="bg-light">Auto-Rejected</th><td>${data.autoRejected ? '🤖 YES' : 'No'}</td></tr>
+                    <tr><th class="bg-light">Rejection Reason Code</th><td>${data.rejectionReasonCode ? '<code>' + data.rejectionReasonCode + '</code>' : 'None'}</td></tr>
+                    <tr><th class="bg-light">Detected Document Type</th><td>${data.documentType || 'N/A'}</td></tr>
+                    <tr><th class="bg-light">Shelter Name Match</th><td>${data.nameMatch !== null ? (data.nameMatch ? '✓ Matched' : 'Discrepancy') : 'N/A'}</td></tr>
+                    <tr><th class="bg-light">Address Match</th><td>${data.addressMatch !== null ? (data.addressMatch ? '✓ Matched' : 'Discrepancy') : 'N/A'}</td></tr>
+                    <tr><th class="bg-light">Extracted Reg Number</th><td>${data.extractedRegistrationNumber || 'None'}</td></tr>
+                    <tr><th class="bg-light">Date Validity</th><td>${data.dateValid !== null ? (data.dateValid ? '✓ Valid' : 'Invalid / Expired') : 'N/A'}</td></tr>
+                    <tr><th class="bg-light">QR Code Detected</th><td>${data.qrDetected ? '✓ Detected' : 'Not Present'}</td></tr>
+                    <tr><th class="bg-light">Official Gov Verification</th><td><span class="badge bg-secondary">${data.officialVerification || 'NOT_AVAILABLE'}</span></td></tr>
+                    <tr><th class="bg-light">Tampering Indicators</th><td>${data.tamperingIndicators ? '⚠️ Editing Traces Found' : '✓ Clean'}</td></tr>
+                `;
+                tbody.innerHTML = rows;
+            })
+            .catch(err => {
+                spinner.style.display = 'none';
+                content.style.display = 'block';
+                pre.textContent = 'Error loading AI analysis: ' + err;
+            });
+    }
+    /*]]>*/
+    </script>
+</body>
+</html>

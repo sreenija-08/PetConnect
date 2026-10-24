@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrator Settings - PetConnect</title>
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts (Outfit) -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar('admin', 'settings')}"></div>
+
+        <div class="content-wrapper">
+            <!-- Header -->
+            <div th:replace="~{fragments/header :: header('Platform Administrator', 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200')}"></div>
+
+            <main class="main-content">
+                <!-- Alert Messages -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show rounded-4 mb-4 shadow-sm border-0" role="alert">
+                    <span th:text="${successMessage}">Success!</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show rounded-4 mb-4 shadow-sm border-0" role="alert">
+                    <span th:text="${errorMessage}">Error!</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <div class="mb-4">
+                    <h1 class="fw-bold mb-1 text-dark">Admin Settings</h1>
+                    <p class="text-muted">Manage your administrative credentials, profile information, and platform alert preferences.</p>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Left Column: Forms -->
+                    <div class="col-lg-8">
+                        <!-- Section A: Account Information -->
+                        <div class="card border-0 shadow-sm p-4 rounded-card mb-4">
+                            <div class="d-flex align-items-center gap-2 mb-3">
+                                <span class="fs-4">🛡️</span>
+                                <h4 class="fw-bold mb-0 text-purple">Administrator Profile</h4>
+                            </div>
+                            <p class="text-muted small mb-4">Update administrator display name and emergency phone contact.</p>
+
+                            <form th:action="@{/admin/settings/profile}" method="POST">
+                                <div class="mb-3">
+                                    <label for="adminFullName" class="form-label fw-semibold text-muted small text-uppercase">Admin Full Name *</label>
+                                    <input type="text" name="fullName" id="adminFullName" 
+                                           class="form-control rounded-pill border-light bg-light py-2 px-3" 
+                                           th:value="${user.fullName}" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="adminEmail" class="form-label fw-semibold text-muted small text-uppercase">Admin Email</label>
+                                    <input type="email" id="adminEmail" 
+                                           class="form-control rounded-pill border-light bg-light py-2 px-3 text-muted" 
+                                           th:value="${user.email}" readonly>
+                                    <small class="text-muted ps-2">Primary administrator login identifier.</small>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="adminPhone" class="form-label fw-semibold text-muted small text-uppercase">Emergency Phone Contact</label>
+                                    <input type="text" name="phone" id="adminPhone" 
+                                           class="form-control rounded-pill border-light bg-light py-2 px-3" 
+                                           th:value="${user.phone}" placeholder="e.g. 9876543210">
+                                </div>
+
+                                <button type="submit" class="btn btn-purple rounded-pill px-4 py-2 fw-semibold">
+                                    Save Profile Changes
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Section B: Change Password -->
+                        <div class="card border-0 shadow-sm p-4 rounded-card mb-4">
+                            <div class="d-flex align-items-center gap-2 mb-3">
+                                <span class="fs-4">🔑</span>
+                                <h4 class="fw-bold mb-0 text-purple">Change Master Password</h4>
+                            </div>
+                            <p class="text-muted small mb-4">Administrative credentials carry elevated platform privileges. Rotate passwords periodically.</p>
+
+                            <form th:action="@{/admin/settings/password}" method="POST">
+                                <div class="mb-3">
+                                    <label for="currentAdminPassword" class="form-label fw-semibold text-muted small text-uppercase">Current Password *</label>
+                                    <div class="password-input-wrapper">
+                                        <input type="password" name="currentPassword" id="currentAdminPassword" 
+                                               class="form-control rounded-pill border-light bg-light py-2 px-3" 
+                                               placeholder="Enter current password" required>
+                                        <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('currentAdminPassword', this)" aria-label="Show password" title="Show password">👁️</button>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="newAdminPassword" class="form-label fw-semibold text-muted small text-uppercase">New Password *</label>
+                                        <div class="password-input-wrapper">
+                                            <input type="password" name="newPassword" id="newAdminPassword" 
+                                                   class="form-control rounded-pill border-light bg-light py-2 px-3" 
+                                                   placeholder="Min 6 characters" minlength="6" required>
+                                            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('newAdminPassword', this)" aria-label="Show password" title="Show password">👁️</button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="confirmAdminPassword" class="form-label fw-semibold text-muted small text-uppercase">Confirm New Password *</label>
+                                        <div class="password-input-wrapper">
+                                            <input type="password" name="confirmPassword" id="confirmAdminPassword" 
+                                                   class="form-control rounded-pill border-light bg-light py-2 px-3" 
+                                                   placeholder="Confirm new password" minlength="6" required>
+                                            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('confirmAdminPassword', this)" aria-label="Show password" title="Show password">👁️</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-purple rounded-pill px-4 py-2 fw-semibold">
+                                    Update Password
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Section C: Notification Preferences -->
+                        <div class="card border-0 shadow-sm p-4 rounded-card mb-4">
+                            <div class="d-flex align-items-center gap-2 mb-3">
+                                <span class="fs-4">🔔</span>
+                                <h4 class="fw-bold mb-0 text-purple">Platform Notification Preferences</h4>
+                            </div>
+                            <p class="text-muted small mb-4">Configure which platform audits and operational events trigger email and in-app alerts.</p>
+
+                            <form th:action="@{/admin/settings/notifications}" method="POST">
+                                <!-- Email Notifications Group -->
+                                <h6 class="fw-bold text-dark mb-3">📧 Email Notifications</h6>
+                                <div class="bg-light p-3 rounded-4 mb-4">
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" name="emailAdoptionUpdates" id="adminEmailAdoptionUpdates" value="true"
+                                               th:checked="${preferences.emailAdoptionUpdates}">
+                                        <label class="form-check-label fw-medium text-dark" for="adminEmailAdoptionUpdates">
+                                            Adoption Final Approvals &amp; Appeals
+                                            <span class="d-block small text-muted font-weight-normal">Receive emails when adoptions require administrative approval or resolution.</span>
+                                        </label>
+                                    </div>
+
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" name="emailVisitUpdates" id="adminEmailVisitUpdates" value="true"
+                                               th:checked="${preferences.emailVisitUpdates}">
+                                        <label class="form-check-label fw-medium text-dark" for="adminEmailVisitUpdates">
+                                            Shelter Verification Applications
+                                            <span class="d-block small text-muted font-weight-normal">Receive emails when new sanctuaries submit legal certificates for verification.</span>
+                                        </label>
+                                    </div>
+
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" name="emailCareUpdates" id="adminEmailCareUpdates" value="true"
+                                               th:checked="${preferences.emailCareUpdates}">
+                                        <label class="form-check-label fw-medium text-dark" for="adminEmailCareUpdates">
+                                            Temporary Care Discrepancies
+                                            <span class="d-block small text-muted font-weight-normal">Alerts when boarding capacity disputes or extended stays are flagged.</span>
+                                        </label>
+                                    </div>
+
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input" type="checkbox" name="emailSecurityUpdates" id="adminEmailSecurityUpdates" value="true"
+                                               th:checked="${preferences.emailSecurityUpdates}" checked disabled>
+                                        <label class="form-check-label fw-medium text-dark" for="adminEmailSecurityUpdates">
+                                            Security &amp; System Audits (Required)
+                                            <span class="d-block small text-muted font-weight-normal">Critical access anomalies, user deactivations, and database alerts.</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- In-App Notifications Group -->
+                                <h6 class="fw-bold text-dark mb-3">📱 In-App Notifications</h6>
+                                <div class="bg-light p-3 rounded-4 mb-4">
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" name="inappAdoptionUpdates" id="adminInappAdoptionUpdates" value="true"
+                                               th:checked="${preferences.inappAdoptionUpdates}">
+                                        <label class="form-check-label fw-medium text-dark" for="adminInappAdoptionUpdates">
+                                            Adoption Workflow Audits
+                                            <span class="d-block small text-muted font-weight-normal">In-app notifications for completed and escalated pet handovers.</span>
+                                        </label>
+                                    </div>
+
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" name="inappCareUpdates" id="adminInappCareUpdates" value="true"
+                                               th:checked="${preferences.inappCareUpdates}">
+                                        <label class="form-check-label fw-medium text-dark" for="adminInappCareUpdates">
+                                            Care Booking Audits
+                                            <span class="d-block small text-muted font-weight-normal">Real-time alerts for active sanctuary occupancy and boarding completions.</span>
+                                        </label>
+                                    </div>
+
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" name="inappShelterUpdates" id="adminInappShelterUpdates" value="true"
+                                               th:checked="${preferences.inappShelterUpdates}">
+                                        <label class="form-check-label fw-medium text-dark" for="adminInappShelterUpdates">
+                                            New Shelter Applications
+                                            <span class="d-block small text-muted font-weight-normal">In-app notifications when new shelters register and submit verification proofs.</span>
+                                        </label>
+                                    </div>
+
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input" type="checkbox" name="inappSystemUpdates" id="adminInappSystemUpdates" value="true"
+                                               th:checked="${preferences.inappSystemUpdates}">
+                                        <label class="form-check-label fw-medium text-dark" for="adminInappSystemUpdates">
+                                            Platform Operations &amp; User Reports
+                                            <span class="d-block small text-muted font-weight-normal">User account status changes, pet verification queues, and audit logs.</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-purple rounded-pill px-4 py-2 fw-semibold">
+                                    Save Notification Preferences
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Section D: AI Document Verification Thresholds -->
+                        <div class="card border-0 shadow-sm p-4 rounded-card mb-4">
+                            <div class="d-flex align-items-center gap-2 mb-3">
+                                <span class="fs-4">🤖</span>
+                                <h4 class="fw-bold mb-0 text-purple">AI Document Verification Thresholds</h4>
+                            </div>
+                            <p class="text-muted small mb-4">
+                                Configure the deterministic confidence score thresholds used by the AI Verification Engine to evaluate uploaded shelter certificates.
+                            </p>
+
+                            <form th:action="@{/admin/settings/verification-thresholds}" method="POST">
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label for="autoRejectThreshold" class="form-label fw-semibold text-muted small text-uppercase">
+                                            Auto-Reject Threshold (&lt; Score) *
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="number" name="autoRejectThreshold" id="autoRejectThreshold" 
+                                                   class="form-control rounded-start-pill border-light bg-light py-2 px-3" 
+                                                   min="0" max="100" th:value="${autoRejectThreshold != null ? autoRejectThreshold : 40}" required>
+                                            <span class="input-group-text rounded-end-pill bg-light border-light text-muted">/ 100</span>
+                                        </div>
+                                        <small class="text-muted">Applications scoring below this threshold are automatically rejected.</small>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="lowRiskThreshold" class="form-label fw-semibold text-muted small text-uppercase">
+                                            Low-Risk Eligible Threshold (&ge; Score) *
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="number" name="lowRiskThreshold" id="lowRiskThreshold" 
+                                                   class="form-control rounded-start-pill border-light bg-light py-2 px-3" 
+                                                   min="0" max="100" th:value="${lowRiskThreshold != null ? lowRiskThreshold : 85}" required>
+                                            <span class="input-group-text rounded-end-pill bg-light border-light text-muted">/ 100</span>
+                                        </div>
+                                        <small class="text-muted">Applications scoring at or above this threshold qualify as low risk.</small>
+                                    </div>
+                                </div>
+
+                                <div class="alert alert-info border-0 rounded-4 p-3 small mb-4">
+                                    <div class="d-flex gap-2">
+                                        <span>ℹ️</span>
+                                        <div>
+                                            <strong>Verification Routing Guide:</strong>
+                                            <ul class="mb-0 ps-3 mt-1">
+                                                <li><strong>&lt; Auto-Reject Threshold:</strong> Status set to <code>AUTO_REJECTED</code>. Owner receives email with failure reasons and resubmission guidance. Admin direct approval is blocked.</li>
+                                                <li><strong>Between Auto-Reject and Low-Risk:</strong> Status set to <code>MANUAL_REVIEW</code>. Administrator must manually inspect certificate discrepancies.</li>
+                                                <li><strong>&ge; Low-Risk Threshold:</strong> Status set to <code>PENDING</code> (Low Risk). Eligible for expedited administrator approval.</li>
+                                                <li><strong>Hard-Fail Rules:</strong> Wrong document type, inverted issue/expiry dates, or conflicting registration numbers trigger instant auto-rejection regardless of score.</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-purple rounded-pill px-4 py-2 fw-semibold">
+                                    Save Verification Thresholds
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Admin Privileges & Security Overview -->
+                    <div class="col-lg-4">
+                        <!-- Section D: Account Status -->
+                        <div class="card border-0 shadow-sm p-4 rounded-card mb-4">
+                            <h5 class="fw-bold mb-3 text-purple">Account Status</h5>
+                            <div class="d-flex align-items-center gap-2 mb-3">
+                                <span class="fs-4">🟢</span>
+                                <div>
+                                    <span class="text-muted small d-block">Platform Authority</span>
+                                    <span class="badge py-2 px-3 rounded-pill fw-semibold bg-success text-white"
+                                          th:text="${user.status}">ACTIVE</span>
+                                </div>
+                            </div>
+                            <p class="text-muted small mb-0">
+                                Master administrator account with full platform management, user moderation, and shelter auditing permissions.
+                            </p>
+                            <div class="border-top mt-3 pt-3 small text-muted">
+                                Provisioned on: <strong class="text-dark" th:text="${user.createdAt != null ? #temporals.format(user.createdAt, 'dd MMM yyyy') : '2026'}">01 Jan 2026</strong>
+                            </div>
+                        </div>
+
+                        <!-- Section E: Security -->
+                        <div class="card border-0 shadow-sm p-4 rounded-card mb-4">
+                            <h5 class="fw-bold mb-3 text-purple">Security Overview</h5>
+                            
+                            <div class="bg-light p-3 rounded-4 mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="text-muted small">Privilege Level</span>
+                                    <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-1 fw-bold">ROLE_ADMIN</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="text-muted small">Encryption</span>
+                                    <span class="small fw-semibold text-dark">BCrypt Hashed</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-muted small">Session Guard</span>
+                                    <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1">Active</span>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-light border rounded-3 p-3 small mb-0">
+                                <div class="d-flex gap-2">
+                                    <span class="fs-5">🛡️</span>
+                                    <div>
+                                        <strong class="text-dark">Administrator Access Protocol</strong>
+                                        <p class="text-muted mb-0 mt-1">
+                                            All administrative modifications to user accounts, shelters, and pet verification are logged in the PetConnect audit trail.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="footer py-4 text-center mt-auto border-top bg-white">
+                <div class="container">
+                    <p class="mb-0 text-muted">&copy; 2026 PetConnect. All rights reserved. Connect. Care. Adopt.</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '🙈';
+                btn.setAttribute('aria-label', 'Hide password');
+                btn.setAttribute('title', 'Hide password');
+            } else {
+                input.type = 'password';
+                btn.textContent = '👁️';
+                btn.setAttribute('aria-label', 'Show password');
+                btn.setAttribute('title', 'Show password');
+            }
+        }
+    </script>
+</body>
+</html>

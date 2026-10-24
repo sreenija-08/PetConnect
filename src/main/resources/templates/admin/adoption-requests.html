@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adoption Moderation - Admin - PetConnect</title>
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts (Outfit) -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar('admin', 'adoptions')}"></div>
+
+        <div class="content-wrapper">
+            <!-- Header -->
+            <div th:replace="~{fragments/header :: header('Platform Administrator', 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200')}"></div>
+
+            <main class="main-content">
+                <!-- Flash Messages -->
+                <div th:if="${successMessage}" class="alert alert-success border-0 rounded-4 p-3 mb-4 shadow-sm">
+                    <span th:text="${successMessage}">Success!</span>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger border-0 rounded-4 p-3 mb-4 shadow-sm">
+                    <span th:text="${errorMessage}">Error!</span>
+                </div>
+
+                <div class="mb-4">
+                    <h1 class="fw-bold mb-1">Adoption Applications & Moderation</h1>
+                    <p class="text-muted">Review, verify, and grant final administrative approval for permanent pet adoptions.</p>
+                </div>
+
+                <!-- Table Card -->
+                <div class="custom-table-container">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>Adopter</th>
+                                <th>Pet</th>
+                                <th>Shelter</th>
+                                <th>Submitted On</th>
+                                <th>Shelter Rec.</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Loop through real applications -->
+                            <tr th:each="app : ${applications}">
+                                <td class="fw-semibold" th:text="${app.fullName}">Sreenija</td>
+                                <td>
+                                    <div class="table-pet-info">
+                                        <img th:src="${app.pet.displayPhoto}" onerror="this.src='https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=800'" class="table-pet-img" alt="Pet Avatar">
+                                        <div>
+                                            <span class="table-pet-name d-block" th:text="${app.pet.name}">Bruno</span>
+                                            <span class="text-muted small" th:text="${app.pet.type + ' • ' + app.pet.breed}">Dog • Labrador</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td th:text="${app.shelter != null ? app.shelter.name : 'Happy Paws'}">Happy Paws Shelter</td>
+                                <td th:text="${#temporals.format(app.createdAt, 'dd MMM yyyy, hh:mm a')}">20 May 2026</td>
+                                <td>
+                                    <span th:if="${app.shelterRecommendation == 'RECOMMENDED'}" class="badge bg-success-subtle text-success py-1 px-2 rounded-pill small">
+                                        ✓ Recommended
+                                    </span>
+                                    <span th:if="${app.shelterRecommendation == 'NOT_RECOMMENDED'}" class="badge bg-danger-subtle text-danger py-1 px-2 rounded-pill small">
+                                        ✕ Not Rec.
+                                    </span>
+                                    <span th:if="${app.shelterRecommendation == null}" class="text-muted small">
+                                        Pending Visit
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge-status" 
+                                          th:classappend="${app.statusCode == 'COMPLETED' || app.statusCode == 'APPROVED' ? 'badge-success' : (app.statusCode == 'REJECTED' ? 'badge-danger' : 'badge-warning')}" 
+                                          th:text="${app.statusDisplayName}">Pending</span>
+                                </td>
+                                <td>
+                                    <a th:href="@{/admin/adoption-requests/{id}(id=${app.id})}" 
+                                       class="btn btn-purple shadow-sm rounded-pill py-1 px-3 small font-weight-bold text-decoration-none">
+                                        View & Moderate &rarr;
+                                    </a>
+                                </td>
+                            </tr>
+
+                            <!-- Empty State -->
+                            <tr th:if="${#lists.isEmpty(applications)}">
+                                <td colspan="7" class="text-center py-5">
+                                    <div class="p-4">
+                                        <span class="fs-1">🔍</span>
+                                        <h5 class="fw-bold mt-2 mb-1">No Applications Found</h5>
+                                        <p class="text-muted">There are currently no adoption applications on the platform.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="footer py-4 text-center mt-auto border-top bg-white">
+                <div class="container">
+                    <p class="mb-0 text-muted">&copy; 2026 PetConnect. All rights reserved. Connect. Care. Adopt.</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<div th:fragment="header(userName, userImage)" class="top-header">
+    <form th:action="@{/browse-pets}" method="GET" class="search-bar m-0">
+        <input type="text" name="search" placeholder="Search pets, breeds, shelters...">
+    </form>
+    
+    <div class="header-actions">
+        <!-- Show Notifications and Avatar only if user is logged in -->
+        <th:block th:if="${loggedInUser != null}">
+            <a th:href="@{/notifications}" class="notification-badge text-decoration-none" title="Notifications">
+                <span>🔔</span>
+                <span class="badge-count" 
+                      th:if="${unreadNotificationsCount != null && unreadNotificationsCount > 0}" 
+                      th:text="${unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}">1</span>
+            </a>
+            
+            <a th:href="${loggedInUser.roles != null && loggedInUser.roles.?[name == 'ROLE_ADMIN'].size() > 0 ? '/admin/dashboard' : (loggedInUser.roles != null && loggedInUser.roles.?[name == 'ROLE_SHELTER_OWNER'].size() > 0 ? '/owner/dashboard' : '/user/profile')}" 
+               class="user-profile-menu text-decoration-none" title="Profile & Account">
+                <div class="user-avatar-circle" 
+                     th:text="${loggedInUser.fullName != null && !loggedInUser.fullName.isBlank() ? loggedInUser.fullName.substring(0, 1).toUpperCase() : 'U'}">
+                    U
+                </div>
+                <span class="fw-semibold" th:text="${loggedInUser.fullName}">User Name</span>
+            </a>
+        </th:block>
+        
+        <!-- Show Login / Register buttons if guest is logged out -->
+        <th:block th:if="${loggedInUser == null}">
+            <div class="d-flex align-items-center gap-2">
+                <a href="/login" class="btn btn-outline-purple rounded-pill px-4 py-2 fw-semibold d-flex align-items-center gap-2">
+                    <span>🔑</span> Login
+                </a>
+                <a href="/register" class="btn btn-purple rounded-pill px-4 py-2 fw-semibold d-flex align-items-center gap-2 text-white">
+                    <span>📝</span> Register
+                </a>
+            </div>
+        </th:block>
+    </div>
+</div>

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Pets - PetConnect</title>
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts (Outfit) -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar('user', 'mypets')}"></div>
+
+        <div class="content-wrapper">
+            <!-- Header -->
+            <div th:replace="~{fragments/header :: header('Sreenija', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200')}"></div>
+
+            <main class="main-content">
+                <!-- Alert Messages -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show rounded-4 mb-4" role="alert">
+                    <span th:text="${successMessage}">Success!</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show rounded-4 mb-4" role="alert">
+                    <span th:text="${errorMessage}">Error!</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <div class="mb-4">
+                    <h1 class="fw-bold mb-1">My Registered Pets</h1>
+                    <p class="text-muted">Register and manage your own pets to book temporary care at approved shelters when travelling.</p>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Left: Add Pet for Care Form -->
+                    <div class="col-lg-5">
+                        <div class="card border-0 shadow-sm p-4 rounded-card">
+                            <div class="d-flex align-items-center gap-2 mb-3">
+                                <span class="fs-4">➕</span>
+                                <h4 class="fw-bold mb-0 text-purple">Register Pet for Care</h4>
+                            </div>
+                            <p class="text-muted small">Enter your pet's details below. Registered pets remain under your ownership and will never appear on adoption pages.</p>
+
+                            <form th:action="@{/user/add-pet}" method="POST" enctype="multipart/form-data">
+                                <div class="mb-3">
+                                    <label for="petName" class="form-label fw-semibold text-muted small text-uppercase">Pet Name</label>
+                                    <input type="text" name="name" class="form-control rounded-pill border-light bg-light py-2 px-3" id="petName" placeholder="e.g. Rocky" required>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold text-muted small text-uppercase">Pet Type</label>
+                                        <select name="type" class="form-select rounded-pill border-light bg-light py-2 px-3" required>
+                                            <option value="DOG">Dog</option>
+                                            <option value="CAT">Cat</option>
+                                            <option value="RABBIT">Rabbit</option>
+                                            <option value="BIRD">Bird</option>
+                                            <option value="OTHER">Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="breed" class="form-label fw-semibold text-muted small text-uppercase">Breed</label>
+                                        <input type="text" name="breed" class="form-control rounded-pill border-light bg-light py-2 px-3" id="breed" placeholder="e.g. Golden Retriever" required>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold text-muted small text-uppercase">Gender</label>
+                                        <select name="gender" class="form-select rounded-pill border-light bg-light py-2 px-3" required>
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="age" class="form-label fw-semibold text-muted small text-uppercase">Age (Years)</label>
+                                        <input type="number" name="age" class="form-control rounded-pill border-light bg-light py-2 px-3" id="age" placeholder="e.g. 3" required>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold text-muted small text-uppercase">Size</label>
+                                        <select name="size" class="form-select rounded-pill border-light bg-light py-2 px-3">
+                                            <option value="Small">Small</option>
+                                            <option value="Medium" selected>Medium</option>
+                                            <option value="Large">Large</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold text-muted small text-uppercase">Vaccinated?</label>
+                                        <select name="vaccinationStatus" class="form-select rounded-pill border-light bg-light py-2 px-3">
+                                            <option value="Fully Vaccinated" selected>Fully Vaccinated</option>
+                                            <option value="Partially Vaccinated">Partially Vaccinated</option>
+                                            <option value="Not Vaccinated">Not Vaccinated</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="specialCareInstructions" class="form-label fw-semibold text-muted small text-uppercase">Special Care / Diet Instructions</label>
+                                    <textarea name="specialCareInstructions" class="form-control rounded-4 border-light bg-light py-2 px-3" id="specialCareInstructions" rows="2" placeholder="e.g. Pedigree kibble twice daily, prefers morning walks."></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="description" class="form-label fw-semibold text-muted small text-uppercase">Pet Description / Temperament</label>
+                                    <textarea name="description" class="form-control rounded-4 border-light bg-light py-2 px-3" id="description" rows="2" placeholder="e.g. Friendly, playful, and comfortable around other dogs."></textarea>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="petPhotoInput" class="form-label fw-semibold text-muted small text-uppercase">Pet Photo</label>
+                                    <input type="file" name="petPhoto" class="form-control rounded-pill border-light bg-light py-2 px-3" id="petPhotoInput" accept=".jpg,.jpeg,.png,.webp">
+                                    <div class="form-text text-muted small">Optional: Choose JPG, JPEG, PNG, or WEBP. Defaults to standard image if left blank.</div>
+                                    <div id="registerPhotoPreviewContainer" class="mt-2 text-center d-none">
+                                        <p class="text-muted small mb-1">Selected Photo Preview:</p>
+                                        <img id="registerPhotoPreview" src="" alt="Pet Preview" class="img-fluid rounded-4 shadow-sm" style="max-height: 130px; object-fit: cover;">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-purple w-100 py-3 rounded-pill fw-semibold">Register Pet</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Right: List of User's Current Pets -->
+                    <div class="col-lg-7">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4 class="fw-bold mb-0">Your Registered Pets</h4>
+                            <span class="text-muted small" th:text="${#lists.size(pets) + ' pets'}">1 pets</span>
+                        </div>
+                        
+                        <div class="row g-4">
+                            <!-- Loop through user pets -->
+                            <div class="col-md-12" th:each="pet : ${pets}">
+                                <div class="card border-0 shadow-sm rounded-card p-3">
+                                    <div class="row align-items-center g-3">
+                                        <div class="col-md-4 text-center">
+                                            <img th:src="${pet.photoUrl != null and !#strings.isEmpty(pet.photoUrl) ? pet.photoUrl : (pet.imagePath != null and !#strings.isEmpty(pet.imagePath) ? pet.imagePath : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=800')}" 
+                                                 th:alt="${pet.name}" class="img-fluid rounded-4 shadow-sm w-100 mb-2" style="height: 140px; object-fit: cover;">
+                                            <button type="button" class="btn btn-sm btn-light border text-purple rounded-pill px-3 py-1 small fw-medium w-100" data-bs-toggle="modal" th:data-bs-target="'#changePhotoModal' + ${pet.id}">
+                                                📷 Change Photo
+                                            </button>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <h4 class="fw-bold mb-1 text-purple" th:text="${pet.name}">Rocky</h4>
+                                                    <span class="badge bg-light text-purple mb-2" th:text="${pet.type + ' • ' + pet.breed}">Dog • Golden Retriever</span>
+                                                </div>
+                                                <span class="badge-status badge-success py-1 px-2">Owned</span>
+                                            </div>
+                                            <p class="text-muted small mb-2" th:text="${pet.description}">Friendly and playful.</p>
+                                            <div class="row g-1 text-muted small mb-3">
+                                                <div class="col-6">Age: <strong class="text-dark" th:text="${pet.age + ' Years'}">3 Years</strong></div>
+                                                <div class="col-6">Gender: <strong class="text-dark" th:text="${pet.gender}">Male</strong></div>
+                                                <div class="col-6">Size: <strong class="text-dark" th:text="${pet.size != null ? pet.size : 'Medium'}">Medium</strong></div>
+                                                <div class="col-6">Status: <strong class="text-success" th:text="${pet.vaccinationStatus != null ? pet.vaccinationStatus : 'Vaccinated'}">Vaccinated</strong></div>
+                                            </div>
+                                            <div class="d-flex gap-2 flex-wrap align-items-center mt-3">
+                                                <!-- View Button -->
+                                                <button type="button" class="btn btn-outline-purple btn-sm rounded-pill px-3 fw-medium" data-bs-toggle="modal" th:data-bs-target="'#viewPetModal' + ${pet.id}">
+                                                    View
+                                                </button>
+                                                <!-- Book Boarding Button -->
+                                                <a th:href="@{/user/find-pet-care(petType=${pet.type})}" class="btn btn-purple btn-sm rounded-pill px-3 fw-medium">
+                                                    Book Boarding
+                                                </a>
+                                                <!-- Delete Button -->
+                                                <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-medium" data-bs-toggle="modal" th:data-bs-target="'#deletePetModal' + ${pet.id}">
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- View Pet Modal -->
+                                <div class="modal fade" th:id="'viewPetModal' + ${pet.id}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content border-0 shadow-lg rounded-card">
+                                            <div class="modal-header border-0 pb-0">
+                                                <h5 class="modal-title fw-bold text-purple" th:text="${pet.name}">Pet Details</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body pt-3">
+                                                <div class="text-center mb-3">
+                                                    <img th:src="${pet.photoUrl != null and !#strings.isEmpty(pet.photoUrl) ? pet.photoUrl : (pet.imagePath != null and !#strings.isEmpty(pet.imagePath) ? pet.imagePath : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=800')}" 
+                                                         th:alt="${pet.name}" class="img-fluid rounded-4 shadow-sm w-100" style="max-height: 220px; object-fit: cover;">
+                                                </div>
+                                                <div class="bg-light p-3 rounded-4 mb-3">
+                                                    <div class="row g-2 small">
+                                                        <div class="col-6"><strong>Type:</strong> <span th:text="${pet.type}">DOG</span></div>
+                                                        <div class="col-6"><strong>Breed:</strong> <span th:text="${pet.breed}">Golden Retriever</span></div>
+                                                        <div class="col-6"><strong>Age:</strong> <span th:text="${pet.age + ' Years'}">3 Years</span></div>
+                                                        <div class="col-6"><strong>Gender:</strong> <span th:text="${pet.gender}">Male</span></div>
+                                                        <div class="col-6"><strong>Size:</strong> <span th:text="${pet.size != null ? pet.size : 'Medium'}">Medium</span></div>
+                                                        <div class="col-6"><strong>Vaccination:</strong> <span th:text="${pet.vaccinationStatus != null ? pet.vaccinationStatus : 'Vaccinated'}">Vaccinated</span></div>
+                                                        <div class="col-12" th:if="${pet.healthInfo != null and !#strings.isEmpty(pet.healthInfo)}">
+                                                            <strong>Health Info:</strong> <span th:text="${pet.healthInfo}">Healthy</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-3" th:if="${pet.description != null and !#strings.isEmpty(pet.description)}">
+                                                    <h6 class="fw-bold small text-muted text-uppercase mb-1">Description</h6>
+                                                    <p class="small text-muted mb-0" th:text="${pet.description}"></p>
+                                                </div>
+                                                <div class="mb-2" th:if="${pet.specialCareInstructions != null and !#strings.isEmpty(pet.specialCareInstructions)}">
+                                                    <h6 class="fw-bold small text-muted text-uppercase mb-1">Special Care / Diet</h6>
+                                                    <p class="small text-muted mb-0" th:text="${pet.specialCareInstructions}"></p>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer border-0 pt-0">
+                                                <a th:href="@{/user/find-pet-care(petType=${pet.type})}" class="btn btn-purple rounded-pill px-4 btn-sm">
+                                                    Book Boarding
+                                                </a>
+                                                <button type="button" class="btn btn-light rounded-pill px-4 btn-sm" data-bs-dismiss="modal">Close</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Delete Pet Modal -->
+                                <div class="modal fade" th:id="'deletePetModal' + ${pet.id}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content border-0 shadow-lg rounded-card">
+                                            <div class="modal-header border-0 pb-0">
+                                                <h5 class="modal-title fw-bold text-danger">Delete Pet</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body pt-3 text-center">
+                                                <div class="fs-1 text-danger mb-2">⚠️</div>
+                                                <h5 class="fw-bold mb-2">Are you sure you want to delete <span class="text-purple" th:text="${pet.name}">Pet</span>?</h5>
+                                                
+                                                <div class="bg-light p-3 rounded-4 my-3 text-start small">
+                                                    <div class="d-flex justify-content-between py-1 border-bottom">
+                                                        <span class="text-muted">Pet Name:</span>
+                                                        <strong class="text-dark" th:text="${pet.name}">Hash</strong>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between py-1 border-bottom">
+                                                        <span class="text-muted">Type / Breed:</span>
+                                                        <strong class="text-dark" th:text="${pet.type + ' • ' + pet.breed}">DOG • Pug</strong>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between py-1">
+                                                        <span class="text-muted">Age / Gender:</span>
+                                                        <strong class="text-dark" th:text="${pet.age + ' Years • ' + pet.gender}">3 Years • Female</strong>
+                                                    </div>
+                                                </div>
+
+                                                <div class="alert alert-warning border-0 rounded-4 py-2 px-3 small text-start mb-0">
+                                                    <strong>Warning:</strong> This action cannot be undone. This pet will be permanently removed from your registered pets.
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer border-0 pt-0 d-flex justify-content-center gap-2">
+                                                <button type="button" class="btn btn-light rounded-pill px-4 fw-medium" data-bs-dismiss="modal">Cancel</button>
+                                                <form th:action="@{/user/delete-pet/{id}(id=${pet.id})}" method="post" class="d-inline">
+                                                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-medium">Delete Permanently</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Change Photo Modal -->
+                                <div class="modal fade" th:id="'changePhotoModal' + ${pet.id}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content border-0 shadow-lg rounded-card">
+                                            <div class="modal-header border-0 pb-0">
+                                                <h5 class="modal-title fw-bold text-purple">Change Photo for <span th:text="${pet.name}">Pet</span></h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <form th:action="@{/user/update-pet-photo/{id}(id=${pet.id})}" method="POST" enctype="multipart/form-data">
+                                                <div class="modal-body pt-3">
+                                                    <div class="text-center mb-3">
+                                                        <p class="text-muted small mb-1">Current Photo:</p>
+                                                        <img th:src="${pet.photoUrl != null and !#strings.isEmpty(pet.photoUrl) ? pet.photoUrl : (pet.imagePath != null and !#strings.isEmpty(pet.imagePath) ? pet.imagePath : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=800')}" 
+                                                             class="img-fluid rounded-4 shadow-sm" style="max-height: 140px; object-fit: cover;">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label fw-semibold text-muted small text-uppercase">Choose New Photo</label>
+                                                        <input type="file" name="petPhoto" class="form-control rounded-pill border-light bg-light py-2 px-3 change-photo-input" 
+                                                               th:data-preview-id="'changePreview' + ${pet.id}"
+                                                               th:data-container-id="'changePreviewContainer' + ${pet.id}"
+                                                               accept=".jpg,.jpeg,.png,.webp" required>
+                                                        <div class="form-text text-muted small">Select JPG, JPEG, PNG, or WEBP (Max 15MB).</div>
+                                                    </div>
+                                                    <div th:id="'changePreviewContainer' + ${pet.id}" class="mt-2 text-center d-none">
+                                                        <p class="text-muted small mb-1">New Photo Preview:</p>
+                                                        <img th:id="'changePreview' + ${pet.id}" src="" class="img-fluid rounded-4 shadow-sm" style="max-height: 140px; object-fit: cover;">
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer border-0 pt-0 d-flex justify-content-center gap-2">
+                                                    <button type="button" class="btn btn-light rounded-pill px-4 fw-medium" data-bs-dismiss="modal">Cancel</button>
+                                                    <button type="submit" class="btn btn-purple rounded-pill px-4 fw-medium">Upload & Save</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- If no pets -->
+                            <div class="col-12" th:if="${#lists.isEmpty(pets)}">
+                                <div class="alert alert-info border-0 rounded-4 p-4 shadow-sm text-center">
+                                    <div class="fs-1 mb-2">🐾</div>
+                                    <h6 class="fw-bold">No registered pets yet!</h6>
+                                    <p class="mb-0">Use the form on the left to register your pet for temporary care bookings.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="footer py-4 text-center mt-auto border-top bg-white">
+                <div class="container">
+                    <p class="mb-0 text-muted">&copy; 2026 PetConnect. All rights reserved. Connect. Care. Adopt.</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Preview for registration form
+        const registerInput = document.getElementById('petPhotoInput');
+        const registerPreview = document.getElementById('registerPhotoPreview');
+        const registerPreviewContainer = document.getElementById('registerPhotoPreviewContainer');
+        if (registerInput && registerPreview && registerPreviewContainer) {
+            registerInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    registerPreview.src = URL.createObjectURL(file);
+                    registerPreviewContainer.classList.remove('d-none');
+                } else {
+                    registerPreview.src = '';
+                    registerPreviewContainer.classList.add('d-none');
+                }
+            });
+        }
+
+        // Preview for change photo modals
+        document.querySelectorAll('.change-photo-input').forEach(function(input) {
+            input.addEventListener('change', function() {
+                const file = this.files[0];
+                const previewId = this.getAttribute('data-preview-id');
+                const containerId = this.getAttribute('data-container-id');
+                const previewImg = document.getElementById(previewId);
+                const container = document.getElementById(containerId);
+                if (file && previewImg && container) {
+                    previewImg.src = URL.createObjectURL(file);
+                    container.classList.remove('d-none');
+                } else if (previewImg && container) {
+                    previewImg.src = '';
+                    container.classList.add('d-none');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

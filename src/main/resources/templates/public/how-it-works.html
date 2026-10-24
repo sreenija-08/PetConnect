@@ -1,0 +1,144 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How It Works - PetConnect</title>
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts (Outfit) -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar(${loggedInUser != null ? (loggedInUser.roles.?[name == 'ROLE_ADMIN'].size() > 0 ? 'admin' : (loggedInUser.roles.?[name == 'ROLE_SHELTER_OWNER'].size() > 0 ? 'owner' : 'user')) : 'public'}, 'how-it-works')}"></div>
+
+        <div class="content-wrapper">
+            <!-- Header -->
+            <div th:replace="~{fragments/header :: header('Guest', '')}"></div>
+
+            <main class="main-content">
+                <div class="text-center max-w-700 mx-auto mb-5">
+                    <span class="badge bg-purple-light text-purple rounded-pill px-3 py-2 fw-bold text-uppercase mb-2">Platform Guide</span>
+                    <h1 class="fw-bold display-5 mb-2">How PetConnect Works</h1>
+                    <p class="lead text-muted">A complete ecosystem connecting pet lovers, verified rescue shelters, and pet owners.</p>
+                </div>
+
+                <div class="row g-4 mb-5">
+                    <!-- Workflow 1: Pet Adoption -->
+                    <div class="col-lg-6">
+                        <div class="card border-0 shadow-sm rounded-card p-4 h-100">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <span class="fs-1">🐶</span>
+                                <div>
+                                    <h3 class="fw-bold mb-0 text-purple">1. Pet Adoption</h3>
+                                    <span class="text-muted small">Find your forever companion</span>
+                                </div>
+                            </div>
+                            <p class="text-muted mb-4">Adopting through PetConnect is structured, safe, and transparent:</p>
+                            
+                            <div class="d-flex flex-column gap-3">
+                                <div class="p-3 bg-light rounded-4 d-flex align-items-start gap-3">
+                                    <span class="badge bg-purple rounded-circle p-2 fs-6">1</span>
+                                    <div>
+                                        <h6 class="fw-bold mb-1">Browse Verified Pets</h6>
+                                        <p class="text-muted small mb-0">Search dogs and cats by breed, age, gender, and location across verified rescue shelters.</p>
+                                    </div>
+                                </div>
+                                <div class="p-3 bg-light rounded-4 d-flex align-items-start gap-3">
+                                    <span class="badge bg-purple rounded-circle p-2 fs-6">2</span>
+                                    <div>
+                                        <h6 class="fw-bold mb-1">Submit Online Application</h6>
+                                        <p class="text-muted small mb-0">Fill out your home type, pet ownership experience, and daily hours alone for shelter review.</p>
+                                    </div>
+                                </div>
+                                <div class="p-3 bg-light rounded-4 d-flex align-items-start gap-3">
+                                    <span class="badge bg-purple rounded-circle p-2 fs-6">3</span>
+                                    <div>
+                                        <h6 class="fw-bold mb-1">Shelter Visit & Interaction</h6>
+                                        <p class="text-muted small mb-0">Meet the pet in person, interact, and receive shelter recommendation.</p>
+                                    </div>
+                                </div>
+                                <div class="p-3 bg-light rounded-4 d-flex align-items-start gap-3">
+                                    <span class="badge bg-purple rounded-circle p-2 fs-6">4</span>
+                                    <div>
+                                        <h6 class="fw-bold mb-1">Admin Approval & Handover</h6>
+                                        <p class="text-muted small mb-0">Admin verifies application authenticity, followed by official pet handover!</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4 pt-3 border-top">
+                                <a href="/browse-pets" class="btn btn-purple w-100 py-3 rounded-pill fw-semibold">Browse Pets for Adoption &rarr;</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Workflow 2: Temporary Pet Care -->
+                    <div class="col-lg-6">
+                        <div class="card border-0 shadow-sm rounded-card p-4 h-100">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <span class="fs-1">🏡</span>
+                                <div>
+                                    <h3 class="fw-bold mb-0 text-purple">2. Temporary Pet Care</h3>
+                                    <span class="text-muted small">Safe boarding while you travel</span>
+                                </div>
+                            </div>
+                            <p class="text-muted mb-4">Board your pet safely at verified shelters without transferring ownership:</p>
+                            
+                            <div class="d-flex flex-column gap-3">
+                                <div class="p-3 bg-light rounded-4 d-flex align-items-start gap-3">
+                                    <span class="badge bg-purple rounded-circle p-2 fs-6">1</span>
+                                    <div>
+                                        <h6 class="fw-bold mb-1">Register Your Pet</h6>
+                                        <p class="text-muted small mb-0">Add your pet's dietary, medical, and vaccination details under 'My Pets'.</p>
+                                    </div>
+                                </div>
+                                <div class="p-3 bg-light rounded-4 d-flex align-items-start gap-3">
+                                    <span class="badge bg-purple rounded-circle p-2 fs-6">2</span>
+                                    <div>
+                                        <h6 class="fw-bold mb-1">Search Available Shelters</h6>
+                                        <p class="text-muted small mb-0">Filter by location, check-in/out dates, daily boarding fee, and live real-time capacity.</p>
+                                    </div>
+                                </div>
+                                <div class="p-3 bg-light rounded-4 d-flex align-items-start gap-3">
+                                    <span class="badge bg-purple rounded-circle p-2 fs-6">3</span>
+                                    <div>
+                                        <h6 class="fw-bold mb-1">Shelter Acceptance & Check-In</h6>
+                                        <p class="text-muted small mb-0">Shelter owner accepts your booking and confirms check-in when you drop off your pet.</p>
+                                    </div>
+                                </div>
+                                <div class="p-3 bg-light rounded-4 d-flex align-items-start gap-3">
+                                    <span class="badge bg-purple rounded-circle p-2 fs-6">4</span>
+                                    <div>
+                                        <h6 class="fw-bold mb-1">Pick Up & Stay Completion</h6>
+                                        <p class="text-muted small mb-0">Pick up your healthy pet. The shelter marks the stay completed and capacity is released.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 pt-3 border-top">
+                                <a href="/user/find-pet-care" class="btn btn-outline-purple w-100 py-3 rounded-pill fw-semibold">Find Pet Care Shelters &rarr;</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="footer py-4 text-center mt-auto border-top bg-white">
+                <div class="container">
+                    <p class="mb-0 text-muted">&copy; 2026 PetConnect. All rights reserved. Connect. Care. Adopt.</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

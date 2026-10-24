@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - PetConnect</title>
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts (Outfit) -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar('admin', 'dashboard')}"></div>
+
+        <div class="content-wrapper">
+            <!-- Header (Admin) -->
+            <div th:replace="~{fragments/header :: header('Platform Administrator', 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200')}"></div>
+
+            <main class="main-content">
+                <div class="mb-4">
+                    <h1 class="fw-bold mb-1">Admin Dashboard</h1>
+                    <p class="text-muted">Overview of the PetConnect system, registrations, and approvals.</p>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="row g-4 mb-5">
+                    <div class="col-md-6 col-lg-3">
+                        <a href="/admin/users" class="text-decoration-none text-dark d-block">
+                            <div class="stat-widget blue">
+                                <div class="stat-widget-details">
+                                    <h3 th:text="${totalUsers}">1,245</h3>
+                                    <p>Total Users</p>
+                                </div>
+                                <span class="stat-widget-icon">👥</span>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="stat-widget orange">
+                            <div class="stat-widget-details">
+                                <h3 th:text="${totalOwners}">32</h3>
+                                <p>Shelter Owners</p>
+                            </div>
+                            <span class="stat-widget-icon">🏡</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="stat-widget purple">
+                            <div class="stat-widget-details">
+                                <h3 th:text="${totalShelters}">28</h3>
+                                <p>Total Shelters</p>
+                            </div>
+                            <span class="stat-widget-icon">🏢</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="stat-widget green">
+                            <div class="stat-widget-details">
+                                <h3 th:text="${totalPets}">256</h3>
+                                <p>Total Pets</p>
+                            </div>
+                            <span class="stat-widget-icon">🐶</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Secondary Stats Grid -->
+                <div class="row g-4 mb-5">
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card border-0 shadow-sm p-3 rounded-card text-center">
+                            <span class="text-muted small text-uppercase fw-semibold mb-1">Available for Adoption</span>
+                            <h3 class="fw-bold text-success" th:text="${availablePets}">180</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card border-0 shadow-sm p-3 rounded-card text-center">
+                            <span class="text-muted small text-uppercase fw-semibold mb-1">Pending Pet Reviews</span>
+                            <h3 class="fw-bold text-warning" th:text="${pendingVerifications}">4</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card border-0 shadow-sm p-3 rounded-card text-center">
+                            <span class="text-muted small text-uppercase fw-semibold mb-1">Adoption Requests</span>
+                            <h3 class="fw-bold text-primary" th:text="${pendingAdoptions}">12</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card border-0 shadow-sm p-3 rounded-card text-center">
+                            <span class="text-muted small text-uppercase fw-semibold mb-1">Active Care Bookings</span>
+                            <h3 class="fw-bold text-info" th:text="${activeBookings}">9</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Submissions Table -->
+                <div class="card border-0 shadow-sm p-4 rounded-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="fw-bold mb-0">Recent Pending Audits</h4>
+                        <a href="/admin/pending-audits" class="text-decoration-none small fw-semibold text-purple">View All &rarr;</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr class="text-muted small text-uppercase">
+                                    <th>Audit Type</th>
+                                    <th>Subject Details</th>
+                                    <th>Submitted Date</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Unified Pending Audits sorted by most recent first -->
+                                <tr th:each="audit : ${recentPendingAudits}">
+                                    <td>
+                                        <span th:text="${audit.typeIcon}">📋</span>
+                                        <span class="fw-semibold text-dark ms-1" th:text="${audit.typeDisplay}">Shelter Verification</span>
+                                    </td>
+                                    <td>
+                                        <strong class="text-dark" th:text="${audit.subjectTitle}">Subject Title</strong>
+                                        <span class="text-muted small ms-1" th:if="${audit.subjectSubtitle != null}" th:text="'(' + ${audit.subjectSubtitle} + ')'">(Owner: Kowsalya)</span>
+                                    </td>
+                                    <td class="text-muted small">
+                                        <span th:if="${audit.submittedDate != null}" th:text="${#temporals.format(audit.submittedDate, 'dd MMM yyyy, hh:mm a')}">15 Sep 2026, 10:30 AM</span>
+                                        <span th:if="${audit.submittedDate == null}">Recently</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge px-3 py-2 rounded-pill" th:classappend="${audit.statusBadgeClass}" th:text="${audit.status}">PENDING</span>
+                                    </td>
+                                    <td>
+                                        <a th:href="${audit.reviewUrl}" class="btn btn-sm btn-purple py-1 px-3">Review</a>
+                                    </td>
+                                </tr>
+
+                                <!-- Empty State -->
+                                <tr th:if="${#lists.isEmpty(recentPendingAudits)}">
+                                    <td colspan="5" class="text-center py-4 text-muted">
+                                        <span class="fs-2">✨</span>
+                                        <h6 class="fw-bold mt-2 mb-1">All Caught Up!</h6>
+                                        <p class="small mb-0">No pending shelter verifications, pet listings, or adoption audits awaiting approval.</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="footer py-4 text-center mt-auto border-top bg-white">
+                <div class="container">
+                    <p class="mb-0 text-muted">&copy; 2026 PetConnect. All rights reserved. Connect. Care. Adopt.</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

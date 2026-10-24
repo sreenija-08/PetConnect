@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adoption Moderation - Admin - PetConnect</title>
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts (Outfit) -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .info-card {
+            background: #F9FAFB;
+            border-radius: 14px;
+            padding: 16px;
+            border: 1px solid #E5E7EB;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar('admin', 'adoptions')}"></div>
+
+        <div class="content-wrapper">
+            <!-- Header -->
+            <div th:replace="~{fragments/header :: header('Platform Administrator', 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200')}"></div>
+
+            <main class="main-content">
+                <div class="container-fluid">
+                    
+                    <!-- Flash Messages -->
+                    <div th:if="${successMessage}" class="alert alert-success border-0 rounded-4 p-3 mb-4 shadow-sm">
+                        <span th:text="${successMessage}">Success!</span>
+                    </div>
+                    <div th:if="${errorMessage}" class="alert alert-danger border-0 rounded-4 p-3 mb-4 shadow-sm">
+                        <span th:text="${errorMessage}">Error!</span>
+                    </div>
+
+                    <!-- Breadcrumbs & Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <a th:href="@{/admin/adoption-requests}" class="text-decoration-none text-muted fw-semibold">&larr; Back to Adoption Moderation</a>
+                            <h2 class="fw-bold mt-2 mb-0">Admin Final Review: <span class="text-purple" th:text="${pet.name}">Bruno</span></h2>
+                            <p class="text-muted small mb-0">Applicant: <strong th:text="${adoptionApplication.fullName}">Applicant Name</strong> • Shelter: <strong th:text="${shelter.name}">Happy Paws</strong></p>
+                        </div>
+                        <div>
+                            <span class="badge-status py-2 px-3 fs-6"
+                                  th:classappend="${adoptionApplication.statusCode == 'COMPLETED' || adoptionApplication.statusCode == 'APPROVED' ? 'badge-success' : (adoptionApplication.statusCode == 'REJECTED' ? 'badge-danger' : 'badge-warning')}"
+                                  th:text="${adoptionApplication.statusDisplayName}">Admin Review</span>
+                        </div>
+                    </div>
+
+                    <div class="row g-4">
+                        <!-- Left Column: Details & Final Decision Controls -->
+                        <div class="col-lg-8">
+
+                            <!-- Admin Decision Box -->
+                            <div th:if="${adoptionApplication.statusCode == 'ADMIN_REVIEW' || adoptionApplication.statusCode == 'SHORTLISTED' || adoptionApplication.statusCode == 'VISIT_CONFIRMED'}" 
+                                 class="card border-0 shadow-sm p-4 rounded-card mb-4 bg-purple-subtle border-start border-purple border-4">
+                                <h5 class="fw-bold text-purple mb-1">⚖️ Administrative Final Decision</h5>
+                                <p class="text-dark small mb-3">Review the shelter's visit recommendation below. As platform admin, you grant final clearance for the adoption contract.</p>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <form th:action="@{/admin/adoption-requests/{id}/approve(id=${adoptionApplication.id})}" method="POST">
+                                            <div class="mb-2">
+                                                <input type="text" name="remarks" class="form-control form-control-sm rounded-pill px-3" placeholder="Admin approval remark (e.g. Verified and approved)">
+                                            </div>
+                                            <button type="submit" class="btn btn-success rounded-pill px-4 py-2 w-100 fw-bold fs-6">
+                                                ✓ APPROVE ADOPTION
+                                            </button>
+                                        </form>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <form th:action="@{/admin/adoption-requests/{id}/reject(id=${adoptionApplication.id})}" method="POST">
+                                            <div class="mb-2">
+                                                <input type="text" name="remarks" class="form-control form-control-sm rounded-pill px-3" placeholder="Rejection reason / remark">
+                                            </div>
+                                            <button type="submit" class="btn btn-danger rounded-pill px-4 py-2 w-100 fw-bold fs-6">
+                                                ✕ REJECT ADOPTION
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Approved Banner -->
+                            <div th:if="${adoptionApplication.statusCode == 'APPROVED'}" class="alert alert-success border-0 rounded-4 p-4 mb-4 shadow-sm">
+                                <h4 class="fw-bold mb-1">🎉 Adoption Officially Approved!</h4>
+                                <p class="mb-0 text-dark small">Admin verification is complete. The shelter owner can now mark handover completed when the adopter arrives. Pet remains listed as AVAILABLE until physical handover.</p>
+                            </div>
+
+                            <!-- Completed Banner -->
+                            <div th:if="${adoptionApplication.statusCode == 'COMPLETED'}" class="alert alert-success border-0 rounded-4 p-4 mb-4 shadow-sm">
+                                <h4 class="fw-bold mb-1">🏆 Adoption Cycle Completed</h4>
+                                <p class="mb-0 text-dark small">Pet handover finalized on <strong th:text="${#temporals.format(adoptionApplication.handoverDate, 'dd MMM yyyy, hh:mm a')}">Date</strong>. Pet is marked ADOPTED and removed from public listings.</p>
+                            </div>
+
+                            <!-- Shelter Recommendation Summary -->
+                            <div class="card border-0 shadow-sm p-4 rounded-card mb-4">
+                                <h5 class="fw-bold text-dark mb-3">🏡 Shelter Visit & Recommendation Audit</h5>
+                                <div class="row g-3">
+                                    <div class="col-sm-6">
+                                        <div class="info-card">
+                                            <small class="text-muted d-block">Shelter Recommendation</small>
+                                            <strong class="fs-5" 
+                                                    th:classappend="${adoptionApplication.shelterRecommendation == 'RECOMMENDED' ? 'text-success' : 'text-danger'}"
+                                                    th:text="${adoptionApplication.shelterRecommendation != null ? adoptionApplication.shelterRecommendation : 'Pending'}">RECOMMENDED</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="info-card">
+                                            <small class="text-muted d-block">Conducted Visit Slot</small>
+                                            <strong class="fs-6 text-dark" th:text="${adoptionApplication.visitSlot != null ? adoptionApplication.visitSlot : 'None'}">7 September</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="info-card">
+                                            <small class="text-muted d-block">Shelter Visit Assessment Notes</small>
+                                            <p class="mb-0 text-dark" th:text="${adoptionApplication.shelterRemarks != null ? adoptionApplication.shelterRemarks : 'No notes submitted'}">Notes</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Application Data Cards -->
+                            <div class="card border-0 shadow-sm p-4 rounded-card mb-4">
+                                <h4 class="fw-bold mb-3">Application Dossier</h4>
+
+                                <!-- Adoption Readiness Section -->
+                                <h6 class="fw-bold text-purple mb-2">📋 Adoption Readiness Responses</h6>
+                                <div class="row g-3 mb-4">
+                                    <div class="col-sm-6">
+                                        <div class="info-card">
+                                            <small class="text-muted d-block">1. Long-term responsibility</small>
+                                            <div>
+                                                <span class="badge fs-6 mt-1 px-3 py-1"
+                                                      th:classappend="${adoptionApplication.readinessQ1 == 'Yes' ? 'bg-success' : (adoptionApplication.readinessQ1 == 'No' ? 'bg-warning text-dark' : 'bg-secondary')}"
+                                                      th:text="${adoptionApplication.readinessQ1 != null ? adoptionApplication.readinessQ1 : 'Not recorded'}">Yes</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="info-card">
+                                            <small class="text-muted d-block">2. Daily time commitment</small>
+                                            <div>
+                                                <span class="badge fs-6 mt-1 px-3 py-1"
+                                                      th:classappend="${adoptionApplication.readinessQ2 == 'Yes' ? 'bg-success' : (adoptionApplication.readinessQ2 == 'No' ? 'bg-warning text-dark' : 'bg-secondary')}"
+                                                      th:text="${adoptionApplication.readinessQ2 != null ? adoptionApplication.readinessQ2 : 'Not recorded'}">Yes</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="info-card">
+                                            <small class="text-muted d-block">3. Financial preparation</small>
+                                            <div>
+                                                <span class="badge fs-6 mt-1 px-3 py-1"
+                                                      th:classappend="${adoptionApplication.readinessQ3 == 'Yes' ? 'bg-success' : (adoptionApplication.readinessQ3 == 'No' ? 'bg-warning text-dark' : 'bg-secondary')}"
+                                                      th:text="${adoptionApplication.readinessQ3 != null ? adoptionApplication.readinessQ3 : 'Not recorded'}">Yes</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="info-card">
+                                            <small class="text-muted d-block">4. Pet-friendly living</small>
+                                            <div>
+                                                <span class="badge fs-6 mt-1 px-3 py-1"
+                                                      th:classappend="${adoptionApplication.readinessQ4 == 'Yes' ? 'bg-success' : (adoptionApplication.readinessQ4 == 'No' ? 'bg-warning text-dark' : 'bg-secondary')}"
+                                                      th:text="${adoptionApplication.readinessQ4 != null ? adoptionApplication.readinessQ4 : 'Not recorded'}">Yes</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Applicant Section -->
+                                <h6 class="fw-bold text-purple mb-2">👤 Applicant Profile</h6>
+                                <div class="row g-3 mb-4">
+                                    <div class="col-sm-4">
+                                        <div class="info-card">
+                                            <small class="text-muted d-block">Full Name</small>
+                                            <strong th:text="${adoptionApplication.fullName != null && !#strings.isEmpty(adoptionApplication.fullName) ? adoptionApplication.fullName : 'Not specified'}">Applicant Name</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <div class="info-card">
+                                            <small class="text-muted d-block">Email</small>
+                                            <strong th:text="${adoptionApplication.email != null && !#strings.isEmpty(adoptionApplication.email) ? adoptionApplication.email : 'Not specified'}">user@petconnect.com</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <div class="info-card">
+                                            <small class="text-muted d-block">Phone Number</small>
+                                            <strong th:text="${adoptionApplication.phone != null && !#strings.isEmpty(adoptionApplication.phone) ? adoptionApplication.phone : 'Not specified'}">9876543210</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="info-card">
+                                            <small class="text-muted d-block">City</small>
+                                            <strong th:text="${adoptionApplication.city != null && !#strings.isEmpty(adoptionApplication.city) ? adoptionApplication.city : 'Not specified'}">City</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="info-card">
+                                            <small class="text-muted d-block">Occupation</small>
+                                            <strong th:text="${adoptionApplication.occupation != null && !#strings.isEmpty(adoptionApplication.occupation) ? adoptionApplication.occupation : 'Not specified'}">Engineer</strong>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Home Environment -->
+                                <h6 class="fw-bold text-purple mb-2">🏡 Home & Environment</h6>
+                                <div class="row g-3 mb-4">
+                                    <div class="col-sm-4">
+                                        <div class="info-card">
+                                            <small class="text-muted d-block">Current Pets</small>
+                                            <strong th:text="${adoptionApplication.currentPets != null && !#strings.isEmpty(adoptionApplication.currentPets) ? adoptionApplication.currentPets : 'None'}">No</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <div class="info-card">
+                                            <small class="text-muted d-block">Prior Experience</small>
+                                            <strong th:text="${adoptionApplication.previousPetExperience != null && !#strings.isEmpty(adoptionApplication.previousPetExperience) ? adoptionApplication.previousPetExperience : 'Not specified'}">Yes</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <div class="info-card">
+                                            <small class="text-muted d-block">Home Type</small>
+                                            <strong th:text="${adoptionApplication.homeType != null && !#strings.isEmpty(adoptionApplication.homeType) ? adoptionApplication.homeType : 'Not specified'}">Apartment</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="info-card">
+                                            <small class="text-muted d-block">Pet Permission</small>
+                                            <strong th:text="${adoptionApplication.petPermission != null && !#strings.isEmpty(adoptionApplication.petPermission) ? adoptionApplication.petPermission : 'Not specified'}">Yes</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="info-card">
+                                            <small class="text-muted d-block">Hours Alone Daily</small>
+                                            <strong th:text="${adoptionApplication.hoursAlone != null && !#strings.isEmpty(adoptionApplication.hoursAlone) ? adoptionApplication.hoursAlone : 'Not specified'}">2-4 hours</strong>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Adoption Motivation -->
+                                <h6 class="fw-bold text-purple mb-2">❤️ Adoption Motivation & Care</h6>
+                                <div class="row g-3 mb-4">
+                                    <div class="col-12">
+                                        <div class="info-card">
+                                            <small class="text-muted d-block">Adoption Reason</small>
+                                            <p class="mb-0 text-dark" th:text="${adoptionApplication.adoptionReason != null && !#strings.isEmpty(adoptionApplication.adoptionReason) ? adoptionApplication.adoptionReason : 'Not provided'}">Reason</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="info-card">
+                                            <small class="text-muted d-block">Primary Caretaker</small>
+                                            <strong th:text="${adoptionApplication.primaryCaretaker != null && !#strings.isEmpty(adoptionApplication.primaryCaretaker) ? adoptionApplication.primaryCaretaker : 'Not specified'}">Self</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="info-card">
+                                            <small class="text-muted d-block">Prepared for Expenses</small>
+                                            <strong th:text="${adoptionApplication.preparedForExpenses != null && !#strings.isEmpty(adoptionApplication.preparedForExpenses) ? adoptionApplication.preparedForExpenses : 'Not specified'}">Yes</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-12" th:if="${adoptionApplication.additionalInformation}">
+                                        <div class="info-card">
+                                            <small class="text-muted d-block">Additional Information</small>
+                                            <p class="mb-0 text-dark" th:text="${adoptionApplication.additionalInformation}">Info</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Verification -->
+                                <h6 class="fw-bold text-purple mb-2">🛡️ Consent & Timeline</h6>
+                                <div class="row g-3">
+                                    <div class="col-sm-6">
+                                        <div class="info-card">
+                                            <small class="text-muted d-block">Terms Accepted</small>
+                                            <strong class="text-success" th:text="${adoptionApplication.termsAccepted ? '✓ Confirmed & Accepted' : 'Not Confirmed'}">✓ Confirmed</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="info-card">
+                                            <small class="text-muted d-block">Submitted Date</small>
+                                            <strong th:text="${#temporals.format(adoptionApplication.createdAt, 'dd MMM yyyy, hh:mm a')}">Date Time</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Pet Details Card -->
+                        <div class="col-lg-4">
+                            <div class="card border-0 shadow-sm p-4 rounded-card mb-4">
+                                <h5 class="fw-bold mb-3">Pet Details</h5>
+                                <img th:src="${pet.displayPhoto}" onerror="this.src='https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=800'" class="img-fluid rounded-4 mb-3" alt="Pet Image" style="height: 200px; width: 100%; object-fit: cover;">
+                                <h4 class="fw-bold mb-1" th:text="${pet.name}">Bruno</h4>
+                                <p class="text-muted small mb-2" th:text="${pet.type + ' • ' + pet.breed + ' • ' + pet.age + ' Yrs'}">Dog • Labrador</p>
+                                
+                                <div class="bg-light p-3 rounded-4 mt-2">
+                                    <div class="d-flex justify-content-between text-muted small mb-1">
+                                        <span>Shelter:</span>
+                                        <strong class="text-dark" th:text="${shelter.name}">Happy Paws</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between text-muted small mb-1">
+                                        <span>Catalog Status:</span>
+                                        <span class="badge bg-purple-subtle text-purple" th:text="${pet.adoptionStatus}">AVAILABLE</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between text-muted small">
+                                        <span>Health Info:</span>
+                                        <span class="text-dark fw-medium" th:text="${pet.healthInfo}">Vaccinated</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="footer py-4 text-center mt-auto border-top bg-white">
+                <div class="container">
+                    <p class="mb-0 text-muted">&copy; 2026 PetConnect. All rights reserved. Connect. Care. Adopt.</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
