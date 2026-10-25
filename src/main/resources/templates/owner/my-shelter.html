@@ -278,19 +278,19 @@
                             <div class="row">
                                 <div class="col-12 mb-3">
                                     <label for="area" class="form-label fw-semibold text-muted small text-uppercase">Area / Place</label>
-                                    <input type="text" name="area" class="form-control rounded-pill border-light bg-light py-2 px-3" id="area" th:value="${shelter.area}" placeholder="e.g. Anna Nagar">
+                                    <input type="text" name="area" class="form-control rounded-pill border-light bg-light py-2 px-3" id="area" th:value="${shelter.area}" placeholder="e.g. Hukumpeta">
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="city" class="form-label fw-semibold text-muted small text-uppercase">City</label>
-                                    <input type="text" name="city" class="form-control rounded-pill border-light bg-light py-2 px-3" id="city" th:value="${shelter.city != null ? shelter.city : 'Chennai'}" placeholder="e.g. Chennai">
+                                    <input type="text" name="city" class="form-control rounded-pill border-light bg-light py-2 px-3" id="city" th:value="${shelter.city}" placeholder="e.g. Rajahmundry">
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="state" class="form-label fw-semibold text-muted small text-uppercase">State</label>
-                                    <input type="text" name="state" class="form-control rounded-pill border-light bg-light py-2 px-3" id="state" th:value="${shelter.state != null ? shelter.state : 'Tamil Nadu'}" placeholder="e.g. Tamil Nadu">
+                                    <input type="text" name="state" class="form-control rounded-pill border-light bg-light py-2 px-3" id="state" th:value="${shelter.state}" placeholder="e.g. Andhra Pradesh">
                                 </div>
                                 <div class="col-12 mb-3">
                                     <label for="address" class="form-label fw-semibold text-muted small text-uppercase">Full Physical Address</label>
-                                    <input type="text" name="address" class="form-control rounded-pill border-light bg-light py-2 px-3" id="address" th:value="${shelter.address != null ? shelter.address : shelter.location}" placeholder="e.g. No. 12, Paws Avenue, Guindy, Chennai - 600032">
+                                    <input type="text" name="address" class="form-control rounded-pill border-light bg-light py-2 px-3" id="address" th:value="${shelter.address != null ? shelter.address : shelter.location}" placeholder="e.g. Sri sai enclave, Hukumpeta, Rajahmundry">
                                 </div>
                                 <div class="col-12 mb-3">
                                     <label for="location" class="form-label fw-semibold text-muted small text-uppercase">General Location Tag</label>
@@ -369,9 +369,20 @@
                                                 <p class="small text-muted mb-1">
                                                     <strong>Disclaimer:</strong> Demo results do not prove government document authenticity. Simulated test data only.
                                                 </p>
-                                                <p class="small text-muted mb-0">
+                                                <p class="small text-muted mb-2">
                                                     Use this mode for academic demonstrations and evaluating the verification engine without needing real government trust certificates.
                                                 </p>
+                                                <div class="mt-2 pt-2 border-top">
+                                                    <div class="small fw-semibold text-purple mb-1">📖 How to use Demo Testing:</div>
+                                                    <ul class="small text-muted ps-3 mb-1">
+                                                        <li><strong>Scenario A (Valid)</strong>: Simulates a certificate that matches your shelter profile. Expected: <strong>DEMO VALIDATION PASSED (Score 85+)</strong>.</li>
+                                                        <li><strong>Scenario B (Uncertain)</strong>: Simulates an unreadable/incomplete certificate. Expected: <strong>DEMO MANUAL REVIEW (Score 70-84)</strong>.</li>
+                                                        <li><strong>Scenario C (Mismatch)</strong>: Simulates a certificate with mismatched registration number. Expected: <strong>DEMO VALIDATION FAILED (Score &lt; 40)</strong>.</li>
+                                                    </ul>
+                                                    <div class="small text-success fw-semibold mt-1">
+                                                        🔒 <em>Note: Running demo scenarios safely tests the verification system and will NEVER overwrite your shelter profile or address.</em>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -393,7 +404,7 @@
                                                         </div>
                                                         <h6 class="fw-bold text-dark mb-1">Valid Demo Certificate</h6>
                                                         <p class="small text-muted mb-2">
-                                                            Simulates <em>Happy Tails Demo Shelter</em> with matching reg no <span class="badge bg-light text-dark border">DEMO/2026/001</span>.
+                                                            Simulates a valid certificate matching <strong th:text="${shelter.name}">Your Shelter</strong> and your location with reg no <span class="badge bg-light text-dark border" th:text="${shelter.registrationNumber != null and !shelter.registrationNumber.isEmpty() ? shelter.registrationNumber : 'DEMO/2026/001'}">DEMO/2026/001</span>.
                                                         </p>
                                                         <div class="small fw-semibold text-success mb-3">
                                                             ✓ Expected: DEMO VALIDATION PASSED

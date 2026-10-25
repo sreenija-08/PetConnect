@@ -338,7 +338,6 @@ public class ShelterOwnerController {
             shelter.setVerificationMode(mode);
 
             shelter.setName(updatedShelter.getName());
-            shelter.setLocation(updatedShelter.getLocation());
             shelter.setDescription(updatedShelter.getDescription());
             shelter.setPhone(updatedShelter.getPhone());
             shelter.setEmail(updatedShelter.getEmail());
@@ -352,10 +351,16 @@ public class ShelterOwnerController {
                 shelter.setSupportedPetTypes(updatedShelter.getSupportedPetTypes());
             }
 
-            if (updatedShelter.getAddress() != null) shelter.setAddress(updatedShelter.getAddress());
-            if (updatedShelter.getArea() != null) shelter.setArea(updatedShelter.getArea());
-            if (updatedShelter.getCity() != null) shelter.setCity(updatedShelter.getCity());
-            if (updatedShelter.getState() != null) shelter.setState(updatedShelter.getState());
+            if (updatedShelter.getAddress() != null) shelter.setAddress(updatedShelter.getAddress().trim());
+            if (updatedShelter.getArea() != null) shelter.setArea(updatedShelter.getArea().trim());
+            if (updatedShelter.getCity() != null) shelter.setCity(updatedShelter.getCity().trim());
+            if (updatedShelter.getState() != null) shelter.setState(updatedShelter.getState().trim());
+
+            if (updatedShelter.getLocation() != null && !updatedShelter.getLocation().isBlank()) {
+                shelter.setLocation(updatedShelter.getLocation().trim());
+            } else if (shelter.getCity() != null && !shelter.getCity().isBlank()) {
+                shelter.setLocation(shelter.getCity() + (shelter.getState() != null && !shelter.getState().isBlank() ? ", " + shelter.getState() : ""));
+            }
 
             if (registrationNumber != null && !registrationNumber.isBlank()) {
                 shelter.setRegistrationNumber(registrationNumber.trim());
@@ -468,42 +473,39 @@ public class ShelterOwnerController {
         }
 
         try {
-            ensureDemoCertificatesExist();
-
             shelter.setVerificationMode("DEMO");
             String certFileName;
             String desc;
 
+            // Preserve shelter's real details - DO NOT overwrite them!
+            String shelterName = (shelter.getName() != null && !shelter.getName().isBlank()) ? shelter.getName() : "Rescue Sanctuary";
+            String shelterAddr = (shelter.getAddress() != null && !shelter.getAddress().isBlank())
+                    ? shelter.getAddress()
+                    : ((shelter.getArea() != null && !shelter.getArea().isBlank() ? shelter.getArea() + ", " : "") +
+                       (shelter.getCity() != null && !shelter.getCity().isBlank() ? shelter.getCity() : "City") + ", " +
+                       (shelter.getState() != null && !shelter.getState().isBlank() ? shelter.getState() : "State"));
+
+            if (shelter.getRegistrationNumber() == null || shelter.getRegistrationNumber().isBlank()) {
+                shelter.setRegistrationNumber("DEMO/2026/001");
+            }
+            String shelterReg = shelter.getRegistrationNumber();
+            String suffix = String.valueOf(shelter.getId());
+
+            // Generate demo certificate customized for THIS shelter
+            generateDemoCertificatesForShelter(shelterName, shelterReg, shelterAddr, suffix);
+
             if ("B".equalsIgnoreCase(scenario)) {
                 // Scenario B: Uncertain Demo Document (Missing address, unclear reg number DEMO/2026/???)
-                shelter.setName("Happy Tails Demo Shelter");
-                shelter.setRegistrationNumber("DEMO/2026/001");
-                shelter.setAddress("Hyderabad, Telangana");
-                shelter.setCity("Hyderabad");
-                shelter.setState("Telangana");
-                shelter.setLocation("Hyderabad, Telangana");
-                certFileName = "demo_certificate_uncertain_B.pdf";
+                certFileName = "demo_certificate_uncertain_B_" + suffix + ".pdf";
                 desc = "Scenario B (Uncertain Demo Document: Unclear registration number & missing address)";
             } else if ("C".equalsIgnoreCase(scenario)) {
-                // Scenario C: Invalid Demo Document (Registration mismatch: DB has DEMO/2026/001, doc has DEMO/2026/999)
-                shelter.setName("Happy Tails Demo Shelter");
-                shelter.setRegistrationNumber("DEMO/2026/001");
-                shelter.setAddress("Hyderabad, Telangana");
-                shelter.setCity("Hyderabad");
-                shelter.setState("Telangana");
-                shelter.setLocation("Hyderabad, Telangana");
-                certFileName = "demo_certificate_invalid_C.pdf";
+                // Scenario C: Invalid Demo Document (Registration mismatch: doc has DEMO/2026/999-MISMATCH vs shelter reg)
+                certFileName = "demo_certificate_invalid_C_" + suffix + ".pdf";
                 desc = "Scenario C (Invalid Demo Document: Registration number mismatch detected)";
             } else {
-                // Scenario A: Valid Demo Document (Happy Tails Demo Shelter, DEMO/2026/001, Hyderabad, Telangana)
-                shelter.setName("Happy Tails Demo Shelter");
-                shelter.setRegistrationNumber("DEMO/2026/001");
-                shelter.setAddress("Hyderabad, Telangana");
-                shelter.setCity("Hyderabad");
-                shelter.setState("Telangana");
-                shelter.setLocation("Hyderabad, Telangana");
-                certFileName = "demo_certificate_valid_A.pdf";
-                desc = "Scenario A (Valid Demo Document: Full match for Happy Tails Demo Shelter)";
+                // Scenario A: Valid Demo Document (Full match for shelter's own name, reg no, and address)
+                certFileName = "demo_certificate_valid_A_" + suffix + ".pdf";
+                desc = "Scenario A (Valid Demo Document: Full match for " + shelterName + ")";
             }
 
             Path certPath = Paths.get("uploads", "shelter-documents", certFileName);
@@ -534,22 +536,25 @@ public class ShelterOwnerController {
         return "redirect:/owner/my-shelter";
     }
 
-    private void ensureDemoCertificatesExist() {
+    private void generateDemoCertificatesForShelter(String name, String reg, String address, String suffix) {
         Path dir = Paths.get("uploads", "shelter-documents");
         try {
             if (!Files.exists(dir)) {
                 Files.createDirectories(dir);
             }
-            Path a = dir.resolve("demo_certificate_valid_A.pdf");
-            Path b = dir.resolve("demo_certificate_uncertain_B.pdf");
-            Path c = dir.resolve("demo_certificate_invalid_C.pdf");
-            if (!Files.exists(a) || !Files.exists(b) || !Files.exists(c)) {
-                ProcessBuilder pb = new ProcessBuilder("python", "ai_service/generate_demo_certificates.py");
-                pb.directory(new File("."));
-                Process p = pb.start();
-                p.waitFor();
-            }
-        } catch (Exception ignored) {}
+            ProcessBuilder pb = new ProcessBuilder(
+                    "python", "ai_service/generate_demo_certificates.py",
+                    "--name", name,
+                    "--reg", reg,
+                    "--address", address,
+                    "--suffix", suffix
+            );
+            pb.directory(new File("."));
+            Process p = pb.start();
+            p.waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (Exception e) {
+            System.err.println("Could not dynamically generate demo certificates: " + e.getMessage());
+        }
     }
 
     @PostMapping("/shelter-images/{imageId}/delete")
